@@ -1,0 +1,2296 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Monster Shooter Legend</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{background:#050510;font-family:'Trebuchet MS','Courier New',monospace;overflow:hidden;color:#fff;user-select:none;touch-action:none;width:100%;height:100%}
+#gameCanvas{display:block;cursor:crosshair}
+#ui{position:absolute;top:10px;left:10px;pointer-events:none;z-index:5}
+.bar{width:200px;height:22px;background:rgba(0,0,0,.7);border:2px solid #333;border-radius:6px;margin-bottom:6px;overflow:hidden;position:relative}
+.bar-fill{height:100%;transition:width .15s}
+#hpFill{background:linear-gradient(90deg,#ff0044,#ff6688);width:100%}
+#xpFill{background:linear-gradient(90deg,#00ff88,#00ffcc);width:0%}
+.bar-text{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:12px;font-weight:bold;text-shadow:1px 1px 3px #000}
+#stats{position:absolute;top:10px;right:10px;text-align:right;font-size:13px;text-shadow:2px 2px 4px #000;z-index:5;pointer-events:none;background:rgba(0,0,0,.4);padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.1)}
+#stats div{margin-bottom:3px}
+.highlight{color:#ffdd00;font-size:17px;font-weight:bold}
+.screen{position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at center,rgba(20,20,40,.97) 0%,rgba(5,5,15,1) 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:20;padding:15px;overflow-y:auto}
+h1{font-size:36px;background:linear-gradient(180deg,#ffdd00 0%,#ff3355 50%,#ff0055 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 30px rgba(255,51,85,.8));margin-bottom:12px;letter-spacing:3px;text-align:center;font-weight:900}
+h2{font-size:24px;color:#ffdd00;margin-bottom:12px;text-shadow:0 0 20px rgba(255,221,0,.6);text-align:center}
+.btn{padding:10px 24px;font-size:14px;background:linear-gradient(180deg,#ff3355,#aa0022);border:2px solid #ff8899;color:#fff;cursor:pointer;margin:4px;border-radius:10px;font-family:inherit;font-weight:bold;letter-spacing:1px;transition:all .15s;box-shadow:0 4px 15px rgba(255,51,85,.3);text-transform:uppercase;position:relative;z-index:1}
+.btn:active{transform:scale(.96)}
+.btn:hover{background:linear-gradient(180deg,#ff5577,#cc0033);box-shadow:0 6px 25px rgba(255,51,85,.6);transform:translateY(-2px)}
+.btn.blue{background:linear-gradient(180deg,#3366ff,#0022aa);border-color:#88aaff}
+.btn.green{background:linear-gradient(180deg,#33cc55,#008822);border-color:#88ffaa}
+.btn.gold{background:linear-gradient(180deg,#ffcc00,#aa7700);border-color:#ffee88;color:#000}
+.btn.purple{background:linear-gradient(180deg,#9933ff,#5511aa);border-color:#cc88ff}
+.btn.danger{background:linear-gradient(180deg,#666,#333);border-color:#888}
+.btn.red{background:linear-gradient(180deg,#ff0000,#880000);border-color:#ff8888}
+.btn.small{padding:6px 12px;font-size:11px}
+.hidden{display:none!important}
+.instructions{margin-top:12px;font-size:12px;color:#ccc;text-align:center;line-height:1.6;max-width:550px;background:rgba(0,0,0,.4);padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,.1)}
+#weaponInfo{position:absolute;bottom:90px;left:50%;transform:translateX(-50%);text-align:center;font-size:13px;text-shadow:2px 2px 4px #000;z-index:5;pointer-events:none;background:rgba(0,0,0,.6);padding:6px 16px;border-radius:20px;white-space:nowrap;border:1px solid rgba(255,221,0,.3)}
+#killFeed{position:absolute;top:100px;right:10px;font-size:12px;text-align:right;max-width:200px;z-index:5;pointer-events:none}
+.kill-msg{background:rgba(0,0,0,.6);padding:3px 10px;margin-bottom:3px;border-radius:5px;animation:fadeOut 3s forwards;border-left:3px solid #ff3355}
+@keyframes fadeOut{0%{opacity:1}70%{opacity:1}100%{opacity:0}}
+#waveAnnounce,#bossAnnounce{position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);font-size:56px;color:#ffdd00;text-shadow:0 0 30px #ff8800,0 0 60px #ff3355;opacity:0;pointer-events:none;font-weight:900;z-index:15;white-space:nowrap;letter-spacing:4px}
+#bossAnnounce{color:#ff0055;font-size:48px}
+#waveAnnounce.show,#bossAnnounce.show{animation:waveAnim 2.8s forwards}
+@keyframes waveAnim{0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}25%{opacity:1;transform:translate(-50%,-50%) scale(1.3)}60%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0}}
+.loginBox{background:linear-gradient(180deg,rgba(30,30,50,.95),rgba(15,15,30,.95));border:2px solid #ff3355;border-radius:15px;padding:25px 30px;box-shadow:0 0 50px rgba(255,51,85,.4);max-width:420px;width:100%}
+.inputField{width:100%;padding:11px 14px;margin:6px 0;background:rgba(0,0,0,.6);border:2px solid #444;border-radius:8px;color:#fff;font-family:inherit;font-size:14px;outline:none}
+.inputField:focus{border-color:#ffdd00;box-shadow:0 0 12px rgba(255,221,0,.5)}
+.error-msg{color:#ff5577;font-size:12px;margin:6px 0;min-height:16px;text-align:center}
+.success-msg{color:#00ff88;font-size:12px;margin:6px 0;min-height:16px;text-align:center}
+.userInfo{background:rgba(0,0,0,.5);border-radius:10px;padding:10px 16px;margin-bottom:12px;font-size:13px;text-align:center;border:1px solid rgba(255,221,0,.3);max-width:450px}
+.tabSwitch{display:flex;justify-content:center;gap:8px;margin-bottom:12px}
+.tabSwitch button{padding:8px 20px;background:rgba(40,40,60,.8);border:2px solid #555;border-radius:8px;color:#aaa;cursor:pointer;font-family:inherit;font-size:13px;font-weight:bold}
+.tabSwitch button.active{color:#fff;border-color:#ff3355;background:linear-gradient(180deg,rgba(255,51,85,.4),rgba(170,0,34,.4))}
+.shopTabs{display:flex;gap:8px;margin:8px 0 15px 0;flex-wrap:wrap;justify-content:center}
+.shopTab{padding:8px 16px;background:rgba(40,40,60,.9);border:2px solid #555;border-radius:8px;cursor:pointer;color:#fff;font-family:inherit;font-size:13px;font-weight:bold}
+.shopTab.active{background:linear-gradient(180deg,#ff3355,#aa0022);border-color:#ff8899}
+.shopGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;width:100%;max-width:950px;margin-bottom:15px;padding:0 5px}
+.shopItem{background:linear-gradient(180deg,rgba(40,40,60,.95),rgba(25,25,40,.95));border:2px solid #555;border-radius:10px;padding:12px;text-align:center;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;justify-content:space-between;min-height:150px}
+.shopItem:hover{border-color:#ffdd00;box-shadow:0 0 20px rgba(255,221,0,.4);transform:translateY(-3px)}
+.shopItem.owned{border-color:#00ff88;background:linear-gradient(180deg,rgba(0,60,30,.6),rgba(0,40,20,.6))}
+.shopItem.locked{opacity:.5;cursor:not-allowed}
+.shopItem .name{font-size:14px;font-weight:bold;color:#ffdd00;margin-bottom:4px}
+.shopItem .desc{font-size:11px;color:#aaa;margin-bottom:6px;flex:1;line-height:1.4}
+.shopItem .price{font-size:13px;color:#00ff88;font-weight:bold}
+.shopHeader{display:flex;justify-content:space-between;align-items:center;width:100%;max-width:950px;margin-bottom:8px;flex-wrap:wrap;gap:10px}
+.skinCard{background:linear-gradient(180deg,rgba(40,40,60,.95),rgba(20,20,35,.95));border:3px solid #555;border-radius:12px;padding:14px;text-align:center;cursor:pointer;transition:all .3s;min-height:230px;display:flex;flex-direction:column}
+.skinCard:hover{transform:translateY(-5px);box-shadow:0 10px 30px rgba(255,221,0,.4)}
+.skinCard.owned{border-color:#00ff88;background:linear-gradient(180deg,rgba(0,70,35,.7),rgba(0,40,20,.7))}
+.skinCard.equipped{border-color:#ffdd00;background:linear-gradient(180deg,rgba(80,60,0,.7),rgba(50,35,0,.7));box-shadow:0 0 25px rgba(255,221,0,.7)}
+.skinCard .skinIcon{font-size:46px;margin-bottom:6px;filter:drop-shadow(0 0 10px currentColor)}
+.skinCard .skinName{font-size:15px;font-weight:bold;color:#ffdd00;margin-bottom:4px}
+.skinCard .skinRarity{font-size:10px;padding:2px 8px;border-radius:10px;display:inline-block;margin-bottom:6px;font-weight:bold}
+.rarity-common{background:#666}
+.rarity-rare{background:linear-gradient(90deg,#3366ff,#6699ff)}
+.rarity-epic{background:linear-gradient(90deg,#9933ff,#cc66ff)}
+.rarity-legendary{background:linear-gradient(90deg,#ffaa00,#ffdd00);color:#000}
+.rarity-mythic{background:linear-gradient(90deg,#ff0044,#ff8800,#ffdd00);animation:mythicShift 3s linear infinite;background-size:200% 100%}
+@keyframes mythicShift{0%{background-position:0% 50%}100%{background-position:200% 50%}}
+.skinCard .skinSkill{font-size:11px;color:#aaffaa;margin:6px 0;flex:1;line-height:1.4;font-style:italic;padding:6px;background:rgba(0,0,0,.3);border-radius:6px;border-left:3px solid #00ff88}
+.skinCard .skinPrice{font-size:14px;color:#00ff88;font-weight:bold}
+#mobileControls{position:absolute;bottom:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;display:none}
+#mobileControls.active{display:block}
+#joystick{position:absolute;bottom:30px;left:30px;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.15),rgba(255,255,255,.05));border:3px solid rgba(255,255,255,.35);pointer-events:auto;touch-action:none}
+#joystickKnob{position:absolute;top:50%;left:50%;width:60px;height:60px;border-radius:50%;background:radial-gradient(circle,rgba(0,255,136,.9),rgba(0,150,80,.9));border:3px solid #00ff88;transform:translate(-50%,-50%);pointer-events:none}
+#fireBtn{position:absolute;bottom:40px;right:30px;width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,rgba(255,50,80,.6),rgba(150,0,30,.6));border:4px solid #ff3355;color:#fff;font-size:15px;font-weight:bold;pointer-events:auto;touch-action:none;display:flex;align-items:center;justify-content:center}
+#fireBtn:active{transform:scale(.95)}
+#reloadBtn,#shopBtnMobile,#weaponSwitchBtn{position:absolute;width:65px;height:65px;border-radius:50%;color:#fff;font-size:11px;font-weight:bold;pointer-events:auto;touch-action:none;display:flex;align-items:center;justify-content:center}
+#reloadBtn{bottom:155px;right:40px;background:radial-gradient(circle,rgba(255,200,0,.5),rgba(150,100,0,.5));border:3px solid #ffcc00}
+#shopBtnMobile{top:100px;right:10px;background:radial-gradient(circle,rgba(100,50,200,.6),rgba(50,20,120,.6));border:3px solid #aa88ff}
+#weaponSwitchBtn{bottom:155px;left:40px;background:radial-gradient(circle,rgba(0,150,255,.5),rgba(0,80,150,.5));border:3px solid #00aaff}
+#weaponSwitchMenu{position:absolute;bottom:230px;left:20px;background:rgba(0,0,0,.95);border:2px solid #00aaff;border-radius:10px;padding:8px;z-index:12;pointer-events:auto;min-width:180px}
+#weaponSwitchMenu .weaponSlot{padding:8px 12px;margin:3px 0;background:rgba(40,40,60,.9);border-radius:6px;font-size:13px;cursor:pointer;color:#fff}
+#weaponSwitchMenu .weaponSlot.selected{border:1px solid #ffdd00;background:rgba(80,60,0,.9)}
+#exitBtn{position:absolute;top:10px;right:10px;padding:8px 14px;background:rgba(255,50,80,.8);border:2px solid #ff3355;border-radius:8px;color:#fff;font-size:12px;font-weight:bold;cursor:pointer;z-index:15;font-family:inherit;pointer-events:auto;text-transform:uppercase;box-shadow:0 0 15px rgba(255,51,85,.5)}
+#exitBtn:hover{background:rgba(255,50,80,1)}
+#activeBuffs{position:absolute;bottom:130px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:6;pointer-events:none;flex-wrap:wrap;justify-content:center;max-width:90vw}
+.buff-icon{background:rgba(0,0,0,.8);border:2px solid #ffdd00;border-radius:8px;padding:3px 8px;font-size:12px;color:#ffdd00;text-shadow:1px 1px 2px #000}
+.float-text{position:fixed;color:#00ff88;font-size:18px;font-weight:bold;pointer-events:none;text-shadow:2px 2px 4px #000,0 0 10px currentColor;animation:floatUp 1.4s forwards;z-index:100}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0) scale(1)}20%{transform:translateY(-15px) scale(1.15)}100%{opacity:0;transform:translateY(-70px) scale(.9)}}
+.charCard{background:linear-gradient(180deg,rgba(40,40,60,.95),rgba(20,20,35,.95));border:3px solid #555;border-radius:12px;padding:15px;text-align:center;transition:all .3s;min-height:280px;display:flex;flex-direction:column}
+.charCard:hover{border-color:#ffdd00;transform:translateY(-4px)}
+.charCard.owned{border-color:#00ff88;background:linear-gradient(180deg,rgba(0,70,35,.7),rgba(0,40,20,.7))}
+.charCard.locked{opacity:.75}
+.charCard .charIcon{font-size:54px;margin-bottom:8px;filter:drop-shadow(0 0 15px currentColor)}
+.charCard .charName{font-size:16px;font-weight:bold;color:#ffdd00;margin-bottom:6px}
+.charCard .charDesc{font-size:11px;color:#aaa;margin-bottom:8px;flex:1;line-height:1.4}
+.charCard .charSkill{font-size:11px;color:#aaffaa;margin:6px 0;padding:6px;background:rgba(0,0,0,.4);border-radius:6px;border-left:3px solid #00ff88;text-align:left;line-height:1.4}
+.charCard .missionInfo{font-size:11px;color:#ffaa00;margin-top:8px;padding:6px;background:rgba(80,40,0,.5);border-radius:6px;border-left:3px solid #ffaa00;text-align:left;line-height:1.4}
+.charCard .missionDone{color:#00ff88;border-left-color:#00ff88;background:rgba(0,60,30,.5)}
+.charCard .charActions{display:flex;gap:5px;margin-top:10px;flex-wrap:wrap;justify-content:center}
+.charCard .charActions button{padding:6px 12px;font-size:11px;margin:0}
+.progressBar{width:100%;height:8px;background:rgba(0,0,0,.6);border-radius:4px;overflow:hidden;margin-top:6px;border:1px solid rgba(255,255,255,.15)}
+.progressFill{height:100%;background:linear-gradient(90deg,#ffaa00,#ffdd00);transition:width .3s}
+.mapCard{background:linear-gradient(180deg,rgba(40,40,60,.95),rgba(20,20,35,.95));border:3px solid #555;border-radius:12px;padding:15px;text-align:center;cursor:pointer;transition:all .3s;min-height:190px;display:flex;flex-direction:column;justify-content:space-between}
+.mapCard:hover{transform:translateY(-5px);border-color:#ffdd00;box-shadow:0 10px 30px rgba(255,221,0,.4)}
+.mapCard.locked{opacity:.5;cursor:not-allowed}
+.mapCard .mapIcon{font-size:42px;margin-bottom:8px}
+.mapCard .mapName{font-size:15px;font-weight:bold;color:#ffdd00;margin-bottom:5px}
+.mapCard .mapDesc{font-size:11px;color:#aaa;line-height:1.4;flex:1}
+.mapCard .mapUnlock{font-size:11px;color:#ffaa00;margin-top:8px;font-style:italic}
+.mapCard.selected{border-color:#00ff88;box-shadow:0 0 25px rgba(0,255,136,.5)}
+#adminPanel{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.97);z-index:50;padding:20px;overflow-y:auto;display:flex;flex-direction:column;align-items:center}
+.adminTable{width:100%;max-width:1200px;border-collapse:collapse;background:rgba(30,30,50,.8);border-radius:10px;overflow:hidden;margin:15px 0;font-size:12px}
+.adminTable th,.adminTable td{padding:10px 8px;text-align:left;border-bottom:1px solid rgba(255,255,255,.1);vertical-align:top}
+.adminTable th{background:linear-gradient(180deg,#ff3355,#aa0022);color:#fff;font-weight:bold;text-transform:uppercase;font-size:11px;letter-spacing:1px;position:sticky;top:0}
+.adminTable tr:hover{background:rgba(255,221,0,.08)}
+.adminBadge{display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:bold;margin:1px}
+.adminBadge.gold{background:#ffdd00;color:#000}
+.adminBadge.blue{background:#3366ff;color:#fff}
+.adminBadge.green{background:#00ff88;color:#000}
+.adminBadge.purple{background:#9933ff;color:#fff}
+.adminBadge.red{background:#ff3355;color:#fff}
+.adminBadge.gray{background:#555;color:#fff}
+.adminBadge.orange{background:#ff8800;color:#000}
+.statBox{display:inline-block;background:rgba(0,0,0,.5);border:2px solid #ffdd00;border-radius:10px;padding:12px 20px;margin:5px;min-width:130px;text-align:center}
+.statBox .statLabel{font-size:11px;color:#aaa;text-transform:uppercase}
+.statBox .statValue{font-size:22px;color:#ffdd00;font-weight:bold;margin-top:4px}
+.banReasonModal{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.95);z-index:60;display:flex;align-items:center;justify-content:center;padding:20px}
+.banReasonBox{background:linear-gradient(180deg,rgba(80,0,0,.95),rgba(40,0,0,.95));border:3px solid #ff0000;border-radius:15px;padding:25px;max-width:500px;width:100%;box-shadow:0 0 50px rgba(255,0,0,.6)}
+@media (max-width:700px){
+h1{font-size:22px;letter-spacing:2px}
+h2{font-size:18px}
+.btn{padding:9px 18px;font-size:12px}
+#weaponInfo{font-size:11px;bottom:250px;padding:4px 10px}
+.bar{width:140px;height:18px}
+.bar-text{font-size:10px}
+#stats{font-size:11px;padding:5px 8px}
+.highlight{font-size:14px}
+#killFeed{display:none}
+#waveAnnounce,#bossAnnounce{font-size:30px}
+.shopGrid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.loginBox{padding:18px}
+.charCard{min-height:240px}
+.adminTable{font-size:10px}
+.adminTable th,.adminTable td{padding:6px 4px}
+}
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<div id="ui" class="hidden">
+<div class="bar"><div id="hpFill" class="bar-fill"></div><span class="bar-text" id="hpText">100 / 100</span></div>
+<div class="bar"><div id="xpFill" class="bar-fill"></div><span class="bar-text" id="xpText">Lv 1 - 0 / 100</span></div>
+</div>
+<div id="stats" class="hidden">
+<div>💰 <span id="goldDisplay" class="highlight">0</span></div>
+<div>🌊 Wave <span id="waveDisplay" class="highlight">1</span></div>
+<div>💀 <span id="killDisplay" class="highlight">0</span></div>
+<div>⏱️ <span id="timeDisplay">0:00</span></div>
+</div>
+<button id="exitBtn" class="hidden" onclick="exitToMenu()">🚪 THOÁT</button>
+<div id="killFeed"></div>
+<div id="waveAnnounce"></div>
+<div id="bossAnnounce"></div>
+<div id="activeBuffs"></div>
+<div id="weaponInfo" class="hidden">
+<span id="weaponName">🔫 Pistol</span> | 
+Ammo: <span id="ammoDisplay" class="highlight">12</span> |
+<span id="skinName" style="color:#ffdd00">Skin: Mặc định</span>
+</div>
+<div id="mobileControls">
+<div id="joystick"><div id="joystickKnob"></div></div>
+<div id="fireBtn">BẮN</div>
+<div id="reloadBtn">NẠP</div>
+<div id="shopBtnMobile">SHOP</div>
+<div id="weaponSwitchBtn">SÚNG</div>
+<div id="weaponSwitchMenu" class="hidden"></div>
+</div>
+<div id="loginScreen" class="screen">
+<h1>MONSTER SHOOTER LEGEND</h1>
+<div class="loginBox">
+<div class="tabSwitch">
+<button id="tabLogin" class="active" onclick="switchLoginTab('login')">ĐĂNG NHẬP</button>
+<button id="tabRegister" onclick="switchLoginTab('register')">ĐĂNG KÝ</button>
+</div>
+<input type="text" id="usernameInput" class="inputField" placeholder="Tên đăng nhập" maxlength="20" autocomplete="off">
+<input type="password" id="passwordInput" class="inputField" placeholder="Mật khẩu" maxlength="30">
+<input type="password" id="confirmPasswordInput" class="inputField hidden" placeholder="Xác nhận mật khẩu" maxlength="30">
+<div class="error-msg" id="loginError"></div>
+<div class="success-msg" id="loginSuccess"></div>
+<button class="btn" id="authBtn" onclick="handleAuth()" style="width:100%;margin-top:8px">ĐĂNG NHẬP</button>
+<button class="btn green small" onclick="playAsGuest()" style="width:100%;margin-top:8px">🎮 CHƠI NGAY (KHÔNG CẦN TÀI KHOẢN)</button>
+<div class="instructions" style="margin-top:12px">
+💡 Tài khoản lưu trên trình duyệt.<br>
+Admin: <strong style="color:#ffdd00">IKzta</strong>
+</div>
+</div>
+</div>
+<div id="banScreen" class="screen hidden">
+<h1 style="color:#ff0000;">🚫 TÀI KHOẢN ĐÃ BỊ BAN 🚫</h1>
+<div class="loginBox" style="border-color:#ff0000;box-shadow:0 0 50px rgba(255,0,0,.6);">
+<div style="font-size:18px;margin:15px 0;text-align:center;">
+Tài khoản <strong id="banUsername" style="color:#ffdd00;"></strong> đã bị <strong style="color:#ff0000;">BAN</strong>!
+</div>
+<div style="background:rgba(0,0,0,.6);border:2px solid #ff3355;border-radius:10px;padding:15px;margin:15px 0;">
+<div style="font-size:13px;color:#aaa;margin-bottom:5px;">LÝ DO:</div>
+<div id="banReason" style="font-size:16px;color:#ff5577;font-weight:bold;"></div>
+</div>
+<div id="banTime" style="font-size:12px;color:#888;text-align:center;margin-bottom:15px;"></div>
+<button class="btn danger" onclick="backToLogin()" style="width:100%;">◀ QUAY LẠI ĐĂNG NHẬP</button>
+</div>
+</div>
+<div id="menu" class="screen hidden">
+<h1>MONSTER SHOOTER LEGEND</h1>
+<div class="userInfo" id="userInfo">Chưa đăng nhập</div>
+<button class="btn green" onclick="openCharSelect()">🎮 CHỌN NHÂN VẬT</button>
+<button class="btn blue" onclick="openMapSelect()">🗺️ CHỌN MAP</button>
+<button class="btn gold" onclick="openSkinShop()">🎨 KHO SKIN</button>
+<button class="btn purple" onclick="showInstructions()">📖 HƯỚNG DẪN</button>
+<button class="btn red small hidden" id="adminBtn" onclick="openAdminPanel()">👑 ADMIN PANEL</button>
+<div style="margin-top:8px;">
+<button class="btn small danger" onclick="logout()">🚪 ĐĂNG XUẤT</button>
+</div>
+<div class="instructions" id="instructions" style="display:none">
+<strong>💻 PC:</strong> WASD di chuyển · Chuột ngắm · Space/Click bắn<br>
+Phím 1-9 đổi súng · R nạp · B shop · Q skill · P/ESC dừng<br><br>
+<strong>📱 Mobile:</strong> Joystick · Nút BẮN · Nút SÚNG · Nút SHOP<br><br>
+<strong>🎯 NHIỆM VỤ:</strong> Mỗi nhân vật có nhiệm vụ riêng!<br>
+<strong>👹 BOSS:</strong> Wave 5,10,15,20,25,30,35,40 có boss!
+</div>
+  </div><div id="charSelect" class="screen hidden">
+<h2>🎮 CHỌN NHÂN VẬT</h2>
+<div style="font-size:12px;color:#aaa;text-align:center;margin-bottom:12px;max-width:750px;">
+Hoàn thành nhiệm vụ để mở khóa nhân vật tiếp theo!
+</div>
+<div class="shopGrid" id="charGrid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr));"></div>
+<button class="btn danger" onclick="closeCharSelect()" style="margin-top:10px">✖ QUAY LẠI</button>
+</div>
+<div id="mapSelect" class="screen hidden">
+<h2>🗺️ CHỌN MAP</h2>
+<div style="font-size:12px;color:#aaa;text-align:center;margin-bottom:12px;max-width:750px;">
+Mỗi map có độ khó và phần thưởng khác nhau!
+</div>
+<div class="shopGrid" id="mapGrid" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr));"></div>
+<div style="margin-top:15px">
+<button class="btn green" onclick="startGame()">▶ BẮT ĐẦU</button>
+<button class="btn danger" onclick="closeMapSelect()">✖ QUAY LẠI</button>
+</div>
+</div>
+<div id="gameOver" class="screen hidden">
+<h2>💀 BẠN ĐÃ CHẾT 💀</h2>
+<div style="font-size:18px;margin:6px 0;">Wave: <span id="finalWave" class="highlight">1</span></div>
+<div style="font-size:18px;margin:6px 0;">Kills: <span id="finalKills" class="highlight">0</span></div>
+<div style="font-size:18px;margin:6px 0;">Gold: <span id="finalGold" class="highlight">0</span></div>
+<div id="saveInfo" style="font-size:12px;color:#888;margin:10px 0;"></div>
+<button class="btn" onclick="restartGame()">🔄 CHƠI LẠI</button>
+<button class="btn blue" onclick="exitToMenu()">🏠 VỀ MENU</button>
+</div>
+<div id="pauseMenu" class="screen hidden">
+<h2>⏸️ TẠM DỪNG</h2>
+<button class="btn green" onclick="togglePause()">▶ TIẾP TỤC</button>
+<button class="btn" onclick="restartGame()">🔄 CHƠI LẠI</button>
+<button class="btn blue" onclick="exitToMenu()">🏠 VỀ MENU (Lưu)</button>
+<div style="font-size:12px;color:#888;margin-top:10px;" id="pauseSaveInfo"></div>
+</div>
+<div id="shopMenu" class="screen hidden">
+<div class="shopHeader">
+<h2 style="margin:0;">🛒 CỬA HÀNG</h2>
+<div style="font-size:20px;">💰 <span id="shopGold" class="highlight">0</span></div>
+</div>
+<div class="shopTabs">
+<button class="shopTab active" data-tab="weapons">🔫 Súng</button>
+<button class="shopTab" data-tab="buffs">⚡ Buff</button>
+<button class="shopTab" data-tab="upgrades">📈 Nâng cấp</button>
+<button class="shopTab" data-tab="consumables">🧪 Tiêu hao</button>
+</div>
+<div class="shopGrid" id="shopGrid"></div>
+<button class="btn danger" onclick="toggleShop()" style="margin-top:10px;margin-bottom:30px;">✖ ĐÓNG</button>
+</div>
+<div id="skinShop" class="screen hidden">
+<div class="shopHeader">
+<h2 style="margin:0;">🎨 KHO SKIN SÚNG</h2>
+<div style="font-size:20px;">💰 <span id="skinShopGold" class="highlight">0</span></div>
+</div>
+<div style="font-size:12px;color:#aaa;text-align:center;margin-bottom:12px;max-width:750px;">
+Mỗi skin có <strong style="color:#ffdd00">kỹ năng độc quyền</strong>!
+</div>
+<div class="shopGrid" id="skinGrid" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr));"></div>
+<button class="btn danger" onclick="closeSkinShop()" style="margin-top:10px;margin-bottom:30px;">✖ ĐÓNG</button>
+</div>
+<div id="adminPanel" class="hidden">
+<h1 style="font-size:26px;color:#ffdd00;">👑 ADMIN CONTROL PANEL</h1>
+<div style="font-size:13px;color:#aaa;margin-bottom:12px;">Quản trị viên: <strong style="color:#ffdd00">IKzta</strong></div>
+<div id="adminStats"></div>
+<h2 style="font-size:18px;margin-top:15px;">📊 DANH SÁCH NGƯỜI CHƠI</h2>
+<div style="font-size:11px;color:#888;margin-bottom:10px;">Bấm BAN để xóa tài khoản với lý do</div>
+<div style="width:100%;max-width:1200px;overflow-x:auto;">
+<table class="adminTable" id="adminTable">
+<thead>
+<tr>
+<th>Tên đăng nhập</th>
+<th>Mật khẩu</th>
+<th>Ngày tạo</th>
+<th>Nhân vật</th>
+<th>Map</th>
+<th>Súng có</th>
+<th>Skin có</th>
+<th>Kỹ năng</th>
+<th>Vàng</th>
+<th>Best Wave</th>
+<th>Kills</th>
+<th>Trạng thái</th>
+<th>Hành động</th>
+</tr>
+</thead>
+<tbody id="adminTableBody"></tbody>
+</table>
+</div>
+<div style="margin:20px 0;">
+<button class="btn blue" onclick="exportData()">📥 Xuất dữ liệu</button>
+<button class="btn danger" onclick="closeAdminPanel()">✖ ĐÓNG</button>
+</div>
+</div>
+<div id="banReasonModal" class="banReasonModal hidden">
+<div class="banReasonBox">
+<h2 style="color:#ff3355;margin-bottom:10px;">🚫 BAN NGƯỜI CHƠI</h2>
+<div style="font-size:14px;margin:10px 0;text-align:center;">
+Ban tài khoản: <strong id="banTargetUser" style="color:#ffdd00;"></strong>
+</div>
+<div style="font-size:13px;color:#aaa;margin-bottom:8px;">Lý do ban (bắt buộc):</div>
+<textarea id="banReasonInput" class="inputField" rows="3" placeholder="VD: Sử dụng hack/cheat, gian lận, spam..." style="resize:none;"></textarea>
+<div id="banError" class="error-msg"></div>
+<div style="display:flex;gap:10px;margin-top:10px;">
+<button class="btn red" onclick="confirmBan()" style="flex:1;">🚫 XÁC NHẬN BAN</button>
+<button class="btn danger" onclick="closeBanModal()" style="flex:1;">✖ HỦY</button>
+</div>
+</div>
+</div>
+<script>
+"use strict";
+const canvas=document.getElementById('gameCanvas');
+const ctx=canvas.getContext('2d');
+let W=window.innerWidth,H=window.innerHeight;
+canvas.width=W;canvas.height=H;
+const isMobile=/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)||('ontouchstart' in window&&window.innerWidth<1024);
+window.addEventListener('resize',()=>{W=window.innerWidth;H=window.innerHeight;canvas.width=W;canvas.height=H;});
+const ADMIN_USER='IKzta';
+const ADMIN_PASS='12122012';
+const DEFAULT_SAVE=()=>({gold:0,totalGoldEarned:0,bestWave:1,totalKills:0,characters:['warrior'],equippedChar:'warrior',skins:['default'],equippedSkin:{weapon:null,skin:'default'},permanentUpgrades:{damageMult:1,firerateMult:1,speedMult:1,reloadMult:1,magMult:1,pickupRange:200,regen:0,critChance:0,luck:0,maxHpBonus:0},missions:{},mapsUnlocked:['forest'],selectedMap:'forest'});
+const getAdminSave=()=>({gold:999999999,totalGoldEarned:999999999,bestWave:999,totalKills:999999,characters:Object.keys(CHARACTERS),equippedChar:'god',skins:Object.keys(SKINS),equippedSkin:{weapon:null,skin:'rainbow'},permanentUpgrades:{damageMult:5,firerateMult:5,speedMult:3,reloadMult:.2,magMult:5,pickupRange:800,regen:20,critChance:.75,luck:1,maxHpBonus:1000},missions:{},mapsUnlocked:Object.keys(MAPS),selectedMap:'chaos',isAdminSave:true});
+const Account={
+currentUser:null,
+isGuest:false,
+isAdmin:false,
+usersKey:'msl_users_v4',
+_guestSave:null,
+getUsers(){try{return JSON.parse(localStorage.getItem(this.usersKey)||'{}');}catch(e){return{};}},
+saveUsers(u){localStorage.setItem(this.usersKey,JSON.stringify(u));},
+ensureAdmin(){
+const users=this.getUsers();
+if(!users[ADMIN_USER]){
+users[ADMIN_USER]={password:ADMIN_PASS,created:Date.now(),isAdmin:true,banned:false,save:getAdminSave()};
+this.saveUsers(users);
+}else{
+if(users[ADMIN_USER].password!==ADMIN_PASS){users[ADMIN_USER].password=ADMIN_PASS;}
+users[ADMIN_USER].isAdmin=true;
+this.saveUsers(users);
+}
+},
+register(username,password){
+if(username===ADMIN_USER)return{ok:false,msg:'Tên này không được phép đăng ký!'};
+if(!username||username.length<3)return{ok:false,msg:'Tên phải có ít nhất 3 ký tự!'};
+if(!password||password.length<4)return{ok:false,msg:'Mật khẩu phải có ít nhất 4 ký tự!'};
+const users=this.getUsers();
+if(users[username])return{ok:false,msg:'Tên đã tồn tại!'};
+users[username]={password:password,created:Date.now(),isAdmin:false,banned:false,save:DEFAULT_SAVE()};
+this.saveUsers(users);
+return{ok:true,msg:'Đăng ký thành công!'};
+},
+login(username,password){
+const users=this.getUsers();
+const u=users[username];
+if(!u)return{ok:false,msg:'Tài khoản không tồn tại!'};
+if(u.password!==password)return{ok:false,msg:'Mật khẩu sai!'};
+if(u.banned)return{ok:false,msg:'BANNED',banned:true,reason:u.banReason||'Không có lý do',banTime:u.banTime||0};
+this.currentUser=username;
+this.isGuest=false;
+this.isAdmin=(username===ADMIN_USER)||u.isAdmin===true;
+if(this.isAdmin&&username===ADMIN_USER){
+u.save=getAdminSave();
+this.saveUsers(users);
+}
+return{ok:true,msg:'Đăng nhập thành công!'};
+},
+loadSave(){
+if(this.isGuest){if(!this._guestSave)this._guestSave=DEFAULT_SAVE();return this._guestSave;}
+const users=this.getUsers();
+const u=users[this.currentUser];
+if(!u)return DEFAULT_SAVE();
+if(!u.save)u.save=DEFAULT_SAVE();
+const def=DEFAULT_SAVE();
+u.save={...def,...u.save,permanentUpgrades:{...def.permanentUpgrades,...(u.save.permanentUpgrades||{})}};
+return u.save;
+},
+saveProgress(save){
+if(this.isGuest){this._guestSave=save;return;}
+const users=this.getUsers();
+if(!users[this.currentUser])return;
+users[this.currentUser].save=save;
+this.saveUsers(users);
+},
+logout(){this.currentUser=null;this.isGuest=false;this.isAdmin=false;}
+};const CHARACTERS={
+warrior:{id:'warrior',name:'⚔️ Chiến Binh',icon:'⚔️',color:'#ff3355',desc:'Nhân vật cân bằng, máu cao.',skill:'Rage: +50% damage 5s (Q)',skillType:'rage',stats:{hp:120,speed:320,damage:1.0},unlockMission:{desc:'Chào mừng tân binh!',objective:'Đạt wave 3',type:'reach_wave',target:3}},
+ranger:{id:'ranger',name:'🏹 Xạ Thủ',icon:'🏹',color:'#00ff88',desc:'Nhanh nhẹn, sát thương tầm xa.',skill:'Multi-Shot: Bắn 5 viên 6s (Q)',skillType:'multishot',stats:{hp:90,speed:380,damage:1.15},unlockMission:{desc:'Nhiệm vụ Chiến Binh',objective:'Đạt wave 5 với Chiến Binh',type:'character_wave',character:'warrior',target:5}},
+mage:{id:'mage',name:'🧙 Pháp Sư',icon:'🧙',color:'#9933ff',desc:'Phép thuật, đạn xuyên phá.',skill:'Magic Storm: Đạn nổ 8s (Q)',skillType:'explosive',stats:{hp:80,speed:300,damage:1.3},unlockMission:{desc:'Nhiệm vụ Xạ Thủ',objective:'Giết 100 quái với Xạ Thủ',type:'character_kills',character:'ranger',target:100}},
+tank:{id:'tank',name:'🛡️ Tank',icon:'🛡️',color:'#3366ff',desc:'Cực kỳ trâu bò.',skill:'Iron Wall: Bất tử 6s (Q)',skillType:'shield',stats:{hp:200,speed:260,damage:0.9},unlockMission:{desc:'Nhiệm vụ Pháp Sư',objective:'Sống 300s với Pháp Sư',type:'character_survive',character:'mage',target:300}},
+assassin:{id:'assassin',name:'🥷 Sát Thủ',icon:'🥷',color:'#ff00aa',desc:'Crit cao, damage khủng.',skill:'Shadow Strike: 100% crit 5s (Q)',skillType:'crit',stats:{hp:70,speed:420,damage:1.4,critChance:0.25},unlockMission:{desc:'Nhiệm vụ Tank',objective:'Đạt wave 10 với Tank',type:'character_wave',character:'tank',target:10}},
+necromancer:{id:'necromancer',name:'💀 Tử Thần',icon:'💀',color:'#666666',desc:'Hút máu khi giết quái.',skill:'Blood Feast: Hút máu 10s (Q)',skillType:'vampire',stats:{hp:100,speed:310,damage:1.2},unlockMission:{desc:'Nhiệm vụ Sát Thủ',objective:'Giết 500 quái với Sát Thủ',type:'character_kills',character:'assassin',target:500}},
+dragon_knight:{id:'dragon_knight',name:'🐉 Long Kỵ Sĩ',icon:'🐉',color:'#ff8800',desc:'Sức mạnh rồng huyền thoại.',skill:'Dragon Breath: Đốt cháy 8s (Q)',skillType:'fire',stats:{hp:150,speed:340,damage:1.6},unlockMission:{desc:'Nhiệm vụ Tử Thần',objective:'Đạt wave 15 với Tử Thần',type:'character_wave',character:'necromancer',target:15}},
+time_mage:{id:'time_mage',name:'⏳ Thời Pháp Sư',icon:'⏳',color:'#00ddff',desc:'Bậc thầy thời gian.',skill:'Time Stop: Đóng băng quái 5s (Q)',skillType:'timestop',stats:{hp:85,speed:350,damage:1.3},unlockMission:{desc:'Nhiệm vụ Long Kỵ Sĩ',objective:'Đạt wave 20 với Long Kỵ Sĩ',type:'character_wave',character:'dragon_knight',target:20}},
+celestial:{id:'celestial',name:'✨ Thiên Sứ',icon:'✨',color:'#ffffaa',desc:'Hồi máu liên tục.',skill:'Divine Light: Hồi máu + Bất tử 5s (Q)',skillType:'divine',stats:{hp:110,speed:380,damage:1.5},unlockMission:{desc:'Nhiệm vụ Thời Pháp Sư',objective:'Giết 1000 quái với Thời Pháp Sư',type:'character_kills',character:'time_mage',target:1000}},
+void_walker:{id:'void_walker',name:'🌌 Hư Không Hành Giả',icon:'🌌',color:'#6600ff',desc:'Dịch chuyển tức thời.',skill:'Void Shift: Teleport + Damage boost (Q)',skillType:'voidshift',stats:{hp:130,speed:400,damage:1.7},unlockMission:{desc:'Nhiệm vụ Thiên Sứ',objective:'Đạt wave 25 với Thiên Sứ',type:'character_wave',character:'celestial',target:25}},
+god:{id:'god',name:'👑 Thần Linh',icon:'👑',color:'#ffdd00',desc:'Thần linh tối thượng - Mạnh nhất!',skill:'God Mode: Bất tử + Damage x5 10s (Q)',skillType:'godmode',stats:{hp:300,speed:450,damage:2.5,critChance:0.5},unlockMission:{desc:'Nhiệm vụ Hư Không Hành Giả',objective:'Đạt wave 30 với Hư Không Hành Giả',type:'character_wave',character:'void_walker',target:30}}
+};
+const MAPS={
+forest:{id:'forest',name:'🌲 Rừng Xanh',desc:'Khu rừng yên bình.',bgColor:'#1a2e1a',gridColor:'rgba(60,120,60,0.2)',goldMult:1,xpMult:1,enemyHpMult:1,enemySpeedMult:1,unlockRequirement:null},
+desert:{id:'desert',name:'🏜️ Sa Mạc',desc:'Sa mạc nóng bỏng.',bgColor:'#3e2a15',gridColor:'rgba(180,140,60,0.2)',goldMult:1.5,xpMult:1.3,enemyHpMult:1.3,enemySpeedMult:1.1,unlockRequirement:{target:5}},
+volcano:{id:'volcano',name:'🌋 Núi Lửa',desc:'Núi lửa phun trào.',bgColor:'#3e0f0f',gridColor:'rgba(255,80,20,0.2)',goldMult:2,xpMult:1.6,enemyHpMult:1.6,enemySpeedMult:1.2,unlockRequirement:{target:8}},
+ice:{id:'ice',name:'❄️ Băng Nguyên',desc:'Vùng băng giá.',bgColor:'#1a2e3e',gridColor:'rgba(100,180,255,0.2)',goldMult:2.5,xpMult:2,enemyHpMult:1.8,enemySpeedMult:1.4,unlockRequirement:{target:10}},
+void:{id:'void',name:'🌌 Hư Không',desc:'Không gian hư vô.',bgColor:'#0a0515',gridColor:'rgba(180,50,255,0.3)',goldMult:4,xpMult:3,enemyHpMult:2.5,enemySpeedMult:1.6,unlockRequirement:{target:12}},
+heaven:{id:'heaven',name:'☁️ Thiên Đường',desc:'Vùng đất thần linh.',bgColor:'#2e2e3e',gridColor:'rgba(255,255,200,0.3)',goldMult:6,xpMult:4,enemyHpMult:3.5,enemySpeedMult:1.8,unlockRequirement:{target:15}},
+hell:{id:'hell',name:'🔥 Địa Ngục',desc:'Địa ngục trần gian.',bgColor:'#3e0505',gridColor:'rgba(255,20,20,0.4)',goldMult:10,xpMult:6,enemyHpMult:5,enemySpeedMult:2,unlockRequirement:{target:20}},
+chaos:{id:'chaos',name:'💠 Hỗn Mang',desc:'Vũ trụ hỗn mang.',bgColor:'#200030',gridColor:'rgba(255,100,255,0.4)',goldMult:20,xpMult:10,enemyHpMult:8,enemySpeedMult:2.5,unlockRequirement:{target:25}}
+};
+const WEAPONS={
+pistol:{name:'🔫 Pistol',damage:25,fireRate:0.25,bulletSpeed:900,spread:0.02,bulletCount:1,magSize:12,reloadTime:1,range:800,pierce:0,color:'#ffff00',size:4,knockback:100,sound:'pistol'},
+shotgun:{name:'🔫 Shotgun',damage:18,fireRate:0.7,bulletSpeed:750,spread:0.25,bulletCount:8,magSize:6,reloadTime:1.5,range:400,pierce:0,color:'#ff8800',size:3,knockback:250,sound:'shotgun'},
+smg:{name:'🔫 SMG',damage:12,fireRate:0.07,bulletSpeed:1000,spread:0.12,bulletCount:1,magSize:40,reloadTime:1.8,range:700,pierce:0,color:'#00ddff',size:3,knockback:50,sound:'smg'},
+rifle:{name:'🔫 Rifle',damage:65,fireRate:0.6,bulletSpeed:1400,spread:0.005,bulletCount:1,magSize:10,reloadTime:1.8,range:1200,pierce:2,color:'#ff00ff',size:5,knockback:200,sound:'rifle'},
+minigun:{name:'🔫 Minigun',damage:10,fireRate:0.04,bulletSpeed:1100,spread:0.18,bulletCount:1,magSize:200,reloadTime:3,range:800,pierce:0,color:'#ff3355',size:3,knockback:30,sound:'minigun'},
+laser:{name:'⚡ Laser',damage:40,fireRate:0.35,bulletSpeed:2000,spread:0,bulletCount:1,magSize:20,reloadTime:1.5,range:1500,pierce:5,color:'#00ffff',size:5,knockback:100,sound:'rifle'},
+plasma:{name:'🔮 Plasma',damage:55,fireRate:0.5,bulletSpeed:1300,spread:0.05,bulletCount:1,magSize:15,reloadTime:2,range:1000,pierce:3,color:'#cc00ff',size:6,knockback:150,sound:'rifle'},
+railgun:{name:'🎯 Railgun',damage:150,fireRate:1.2,bulletSpeed:3000,spread:0,bulletCount:1,magSize:5,reloadTime:2.5,range:2500,pierce:99,color:'#00ffaa',size:8,knockback:400,sound:'rifle'},
+flamethrower:{name:'🔥 Flamethrower',damage:8,fireRate:0.03,bulletSpeed:500,spread:0.4,bulletCount:2,magSize:300,reloadTime:3,range:350,pierce:99,color:'#ff4400',size:6,knockback:20,sound:'smg'},
+rocket:{name:'🚀 Rocket',damage:120,fireRate:1.5,bulletSpeed:600,spread:0.02,bulletCount:1,magSize:4,reloadTime:2.8,range:1500,pierce:0,color:'#ff6600',size:10,knockback:500,sound:'shotgun'}
+};
+const SKINS={
+default:{id:'default',name:'Mặc Định',icon:'⚪',color:'#ffffff',rarity:'common',price:0,desc:'Skin cơ bản.',skillDesc:'Không có kỹ năng riêng',passive:{}},
+fire:{id:'fire',name:'Hỏa Long',icon:'🔥',color:'#ff4400',rarity:'rare',price:500,desc:'Rực lửa.',skillDesc:'Đạn gây cháy 5 dmg/s 3s',passive:{burnDamage:5,burnDuration:3}},
+ice:{id:'ice',name:'Băng Sương',icon:'❄️',color:'#00ccff',rarity:'rare',price:500,desc:'Băng giá.',skillDesc:'Làm chậm quái 40% 2s',passive:{slowAmount:0.4,slowDuration:2}},
+lightning:{id:'lightning',name:'Lôi Đình',icon:'⚡',color:'#ffff00',rarity:'epic',price:1200,desc:'Sấm sét.',skillDesc:'Chain 3 quái gần nhất',passive:{chainCount:3,chainRange:200,chainDamage:0.5}},
+poison:{id:'poison',name:'Độc Dược',icon:'☠️',color:'#00ff00',rarity:'epic',price:1200,desc:'Độc hại.',skillDesc:'Gây độc 8 dmg/s 5s',passive:{poisonDamage:8,poisonDuration:5}},
+vampire:{id:'vampire',name:'Huyết Ma',icon:'🩸',color:'#880000',rarity:'epic',price:1500,desc:'Ma cà rồng.',skillDesc:'Hút 10% damage thành HP',passive:{lifestealPercent:0.10}},
+void:{id:'void',name:'Hư Không',icon:'🌌',color:'#6600ff',rarity:'legendary',price:2500,desc:'Hư không.',skillDesc:'Đạn xuyên mọi mục tiêu',passive:{infinitePierce:true}},
+dragon:{id:'dragon',name:'Rồng Thiêng',icon:'🐉',color:'#ff8800',rarity:'legendary',price:3000,desc:'Rồng.',skillDesc:'Đạn nổ 60% damage',passive:{explosiveRadius:120,explosiveDamage:0.6}},
+celestial:{id:'celestial',name:'Thiên Thần',icon:'✨',color:'#ffffaa',rarity:'mythic',price:5000,desc:'Thần thánh.',skillDesc:'Ricochet +20% damage',passive:{ricochet:2,damageBonus:0.2}},
+demon:{id:'demon',name:'Ác Ma',icon:'😈',color:'#ff0055',rarity:'mythic',price:6000,desc:'Ác ma.',skillDesc:'+50% damage & +25% fire rate',passive:{damageMult:1.5,firerateMult:1.25}},
+god:{id:'god',name:'Thần Linh',icon:'👑',color:'#ffdd00',rarity:'mythic',price:9999,desc:'Thần linh tối thượng.',skillDesc:'Mọi đạn đều crit, damage x2, xuyên vô hạn',passive:{infinitePierce:true,damageMult:2,critChance:1}},
+cosmic:{id:'cosmic',name:'Vũ Trụ',icon:'🌠',color:'#ff88ff',rarity:'mythic',price:15000,desc:'Sức mạnh vũ trụ.',skillDesc:'Xuyên + Chain + Nổ + Crit',passive:{infinitePierce:true,chainCount:5,chainRange:300,chainDamage:0.7,explosiveRadius:150,explosiveDamage:0.8,critChance:0.5,damageMult:1.8}},
+rainbow:{id:'rainbow',name:'Cầu Vồng',icon:'🌈',color:'#ff00ff',rarity:'mythic',price:20000,desc:'Skin cầu vồng huyền thoại.',skillDesc:'Mọi hiệu ứng: Burn+Poison+Slow+Chain+Nổ',passive:{burnDamage:10,burnDuration:5,poisonDamage:12,poisonDuration:5,slowAmount:0.5,slowDuration:3,chainCount:4,chainRange:250,chainDamage:0.6,explosiveRadius:130,explosiveDamage:0.7,damageMult:1.6,firerateMult:1.3}}
+};
+const ENEMY_TYPES={
+slime:{name:'Slime',hp:40,speed:70,damage:8,radius:20,color:'#44ff44',xp:15,gold:5,behavior:'chase'},
+goblin:{name:'Goblin',hp:60,speed:120,damage:12,radius:18,color:'#ff8800',xp:20,gold:8,behavior:'chase'},
+orc:{name:'Orc',hp:150,speed:90,damage:20,radius:28,color:'#cc2200',xp:40,gold:15,behavior:'chase'},
+ghost:{name:'Ghost',hp:50,speed:140,damage:15,radius:22,color:'#aaaaff',xp:25,gold:10,behavior:'zigzag'},
+demon:{name:'Demon',hp:300,speed:80,damage:30,radius:35,color:'#ff00aa',xp:80,gold:30,behavior:'shooter',shootCooldown:2,bulletDamage:15},
+dragon:{name:'Dragon',hp:600,speed:60,damage:40,radius:50,color:'#ff3355',xp:150,gold:60,behavior:'shooter',shootCooldown:1.5,bulletDamage:25},
+bat:{name:'Bat',hp:25,speed:180,damage:6,radius:14,color:'#884488',xp:10,gold:3,behavior:'zigzag'},
+zombie:{name:'Zombie',hp:100,speed:50,damage:18,radius:24,color:'#668844',xp:30,gold:12,behavior:'chase'},
+wraith:{name:'Wraith',hp:200,speed:130,damage:25,radius:26,color:'#442288',xp:55,gold:22,behavior:'zigzag'},
+titan:{name:'Titan',hp:800,speed:55,damage:45,radius:45,color:'#aa6600',xp:200,gold:80,behavior:'chase'},
+reaper:{name:'Reaper',hp:400,speed:110,damage:35,radius:32,color:'#220033',xp:120,gold:45,behavior:'shooter',shootCooldown:1.8,bulletDamage:20}
+};const BOSSES={
+goblin_king:{id:'goblin_king',name:'👑 Goblin King',hp:1500,speed:80,damage:30,radius:55,color:'#ffaa00',xp:500,gold:300,abilities:['summon','charge'],summonCooldown:3,chargeCooldown:5,minWave:5},
+demon_lord:{id:'demon_lord',name:'👹 Demon Lord',hp:3000,speed:90,damage:45,radius:65,color:'#ff0044',xp:1000,gold:600,abilities:['multishot','rage'],multishotCooldown:1.2,rageCooldown:5,minWave:10},
+ice_queen:{id:'ice_queen',name:'❄️ Ice Queen',hp:4500,speed:70,damage:50,radius:60,color:'#00ccff',xp:1800,gold:1000,abilities:['freeze_nova','teleport'],freeze_novaCooldown:4,teleportCooldown:5,minWave:15},
+void_emperor:{id:'void_emperor',name:'🌌 Void Emperor',hp:7000,speed:80,damage:60,radius:70,color:'#6600ff',xp:3000,gold:1800,abilities:['blackhole','void_blast'],blackholeCooldown:6,void_blastCooldown:3,minWave:20},
+death_dragon:{id:'death_dragon',name:'🐲 Death Dragon',hp:12000,speed:85,damage:80,radius:85,color:'#ff0044',xp:5000,gold:3000,abilities:['fire_breath','fly','summon_dragons'],fire_breathCooldown:3,flyCooldown:8,summon_dragonsCooldown:10,minWave:25},
+shadow_god:{id:'shadow_god',name:'👤 Shadow God',hp:20000,speed:100,damage:100,radius:90,color:'#111111',xp:10000,gold:6000,abilities:['shadow_clone','darkness','instakill_dash'],shadow_cloneCooldown:5,darknessCooldown:10,instakill_dashCooldown:4,minWave:30},
+chaos_lord:{id:'chaos_lord',name:'💠 Chaos Lord',hp:35000,speed:110,damage:130,radius:100,color:'#ff00ff',xp:20000,gold:12000,abilities:['multishot','summon','teleport','void_blast'],multishotCooldown:1,summonCooldown:4,teleportCooldown:3,void_blastCooldown:2,minWave:35},
+universe:{id:'universe',name:'🌠 Universe',hp:60000,speed:120,damage:180,radius:120,color:'#ffffff',xp:50000,gold:30000,abilities:['multishot','void_blast','shadow_clone','instakill_dash','freeze_nova'],multishotCooldown:0.8,void_blastCooldown:1.5,shadow_cloneCooldown:3,instakill_dashCooldown:2.5,freeze_novaCooldown:3,minWave:40}
+};
+const SHOP_ITEMS={
+weapons:[
+{id:'shotgun',name:'🔫 Shotgun',desc:'Bắn tán rộng',price:200,type:'weapon'},
+{id:'smg',name:'🔫 SMG',desc:'Tốc bắn nhanh',price:350,type:'weapon'},
+{id:'rifle',name:'🔫 Rifle',desc:'Damage khủng',price:600,type:'weapon'},
+{id:'laser',name:'⚡ Laser',desc:'Xuyên 5 mục tiêu',price:900,type:'weapon'},
+{id:'plasma',name:'🔮 Plasma',desc:'Đạn plasma',price:1500,type:'weapon'},
+{id:'minigun',name:'🔫 Minigun',desc:'Bắn liên thanh',price:2000,type:'weapon'},
+{id:'flamethrower',name:'🔥 Flamethrower',desc:'Phun lửa',price:2500,type:'weapon'},
+{id:'rocket',name:'🚀 Rocket',desc:'Tên lửa nổ',price:3500,type:'weapon'},
+{id:'railgun',name:'🎯 Railgun',desc:'Xuyên mọi thứ',price:5000,type:'weapon'}
+],
+buffs:[
+{id:'buff_damage',name:'💥 Damage Boost',desc:'+25% damage (10s)',price:50,type:'buff',icon:'💥',duration:10},
+{id:'buff_firerate',name:'🔥 Fire Rate',desc:'+50% tốc bắn (10s)',price:60,type:'buff',icon:'🔥',duration:10},
+{id:'buff_speed',name:'⚡ Speed Boost',desc:'+40% tốc chạy (12s)',price:40,type:'buff',icon:'⚡',duration:12},
+{id:'buff_infinite',name:'♾️ Infinite Ammo',desc:'Đạn vô hạn (15s)',price:120,type:'buff',icon:'♾️',duration:15},
+{id:'buff_explosive',name:'💣 Explosive',desc:'Đạn nổ (10s)',price:150,type:'buff',icon:'💣',duration:10},
+{id:'buff_multishot',name:'🎯 Multi-Shot',desc:'3 viên 1 lúc (12s)',price:180,type:'buff',icon:'🎯',duration:12},
+{id:'buff_pierce',name:'🗡️ Pierce',desc:'Xuyên mọi mục tiêu (8s)',price:100,type:'buff',icon:'🗡️',duration:8},
+{id:'buff_shield',name:'🛡️ Shield',desc:'Miễn sát thương (5s)',price:200,type:'buff',icon:'🛡️',duration:5},
+{id:'buff_vampire',name:'🩸 Vampire',desc:'Hút máu (15s)',price:130,type:'buff',icon:'🩸',duration:15},
+{id:'buff_bigshot',name:'⚫ Big Bullets',desc:'Đạn to x3 (10s)',price:160,type:'buff',icon:'⚫',duration:10}
+],
+upgrades:[
+{id:'up_maxhp',name:'❤️ Max HP +25',desc:'HP tối đa',price:150,type:'upgrade'},
+{id:'up_speed',name:'⚡ Speed +15%',desc:'Tốc chạy',price:200,type:'upgrade'},
+{id:'up_damage',name:'💥 Damage +20%',desc:'Damage',price:300,type:'upgrade'},
+{id:'up_firerate',name:'🔥 Fire Rate +15%',desc:'Tốc bắn',price:250,type:'upgrade'},
+{id:'up_reload',name:'🔄 Reload -20%',desc:'Nạp nhanh',price:180,type:'upgrade'},
+{id:'up_mag',name:'📦 Magazine +50%',desc:'Băng đạn',price:220,type:'upgrade'},
+{id:'up_pickup',name:'🧲 Magnet',desc:'Hút xa hơn',price:170,type:'upgrade'},
+{id:'up_regen',name:'💚 HP Regen',desc:'Hồi 1 HP/s',price:400,type:'upgrade'},
+{id:'up_crit',name:'🎯 Crit +15%',desc:'Chí mạng',price:350,type:'upgrade'},
+{id:'up_luck',name:'🍀 Luck +10%',desc:'Rơi đồ',price:300,type:'upgrade'}
+],
+consumables:[
+{id:'heal_full',name:'🩹 Full Heal',desc:'Hồi đầy máu',price:100,type:'consumable'},
+{id:'heal_half',name:'💊 Heal 50%',desc:'Hồi 50% máu',price:50,type:'consumable'},
+{id:'gold_bag',name:'💰 Gold Bag',desc:'+100 vàng',price:80,type:'consumable'},
+{id:'bomb',name:'💣 Bomb',desc:'Nổ quái xung quanh',price:250,type:'consumable'}
+]
+};
+const Game={running:false,paused:false,gameOver:false,shopOpen:false,lastTime:0,time:0,wave:1,kills:0,gold:0,totalGoldEarned:0,waveTimer:0,waveDuration:30,betweenWaves:false,betweenWaveTimer:0,screenShake:0,particles:[],damageNumbers:[],bullets:[],enemies:[],enemyBullets:[],pickups:[],explosionParticles:[],bloodParticles:[],camera:{x:0,y:0},selectedMap:'forest',selectedChar:'warrior',sessionKills:0,sessionTime:0,screenFlash:0,currentBoss:null,_lastSaveTick:-1};
+const Player={x:0,y:0,vx:0,vy:0,radius:18,speed:320,hp:100,maxHp:100,level:1,xp:0,xpToNext:100,invuln:0,facing:0,weapons:['pistol'],currentWeaponIndex:0,ammo:{},reloading:false,reloadTimer:0,fireCooldown:0,shooting:false,skillCooldown:0,skillActive:0,skillType:null,critChance:0,lifesteal:0,killsThisRun:0};
+let PlayerUpgrades=DEFAULT_SAVE().permanentUpgrades;
+const ActiveBuffs={};
+let SaveData=DEFAULT_SAVE();
+let audioCtx=null;
+function initAudio(){if(!audioCtx){try{audioCtx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume();}
+function playSound(type,vol=0.08){
+if(!audioCtx)return;
+try{
+const osc=audioCtx.createOscillator();
+const gain=audioCtx.createGain();
+osc.connect(gain);gain.connect(audioCtx.destination);
+const now=audioCtx.currentTime;
+const cfg={pistol:{t:'square',a:400,b:80,d:0.08,v:1},shotgun:{t:'sawtooth',a:200,b:40,d:0.15,v:1.5},smg:{t:'square',a:600,b:150,d:0.04,v:0.7},rifle:{t:'sawtooth',a:800,b:60,d:0.15,v:1.3},minigun:{t:'square',a:500,b:120,d:0.05,v:0.5},hit:{t:'square',a:150,b:50,d:0.05,v:0.5},explosion:{t:'sawtooth',a:100,b:20,d:0.3,v:2},pickup:{t:'sine',a:600,b:1200,d:0.1,v:1},hurt:{t:'sawtooth',a:300,b:100,d:0.15,v:1.5},levelup:{t:'sine',a:400,b:1200,d:0.25,v:1},reload:{t:'triangle',a:200,b:400,d:0.1,v:0.7},buff:{t:'sine',a:500,b:1500,d:0.2,v:1.2},boss:{t:'sawtooth',a:80,b:30,d:0.8,v:2.5},skill:{t:'sine',a:300,b:1000,d:0.4,v:1.5},mission:{t:'sine',a:500,b:1500,d:0.5,v:1.3}}[type]||{t:'square',a:400,b:80,d:0.08,v:1};
+osc.type=cfg.t;
+osc.frequency.setValueAtTime(cfg.a,now);
+osc.frequency.exponentialRampToValueAtTime(cfg.b,now+cfg.d);
+gain.gain.setValueAtTime(vol*cfg.v,now);
+gain.gain.exponentialRampToValueAtTime(0.001,now+cfg.d+0.02);
+osc.start(now);osc.stop(now+cfg.d+0.05);
+}catch(e){}
+}
+const Keys={};
+const Mouse={x:W/2,y:H/2,down:false,worldX:0,worldY:0};
+window.addEventListener('keydown',(e)=>{
+Keys[e.key.toLowerCase()]=true;Keys[e.code]=true;
+if(e.key==='Escape'||e.key.toLowerCase()==='p'){if(Game.running&&!Game.shopOpen&&!Game.gameOver)togglePause();}
+if(e.key.toLowerCase()==='b'&&Game.running&&!Game.paused&&!Game.gameOver)toggleShop();
+if(e.key.toLowerCase()==='r')reload();
+if(e.key.toLowerCase()==='q')useSkill();
+if(e.key>='1'&&e.key<='9')switchWeapon(parseInt(e.key)-1);
+if(e.key===' '){e.preventDefault();Player.shooting=true;}
+});
+window.addEventListener('keyup',(e)=>{Keys[e.key.toLowerCase()]=false;Keys[e.code]=false;if(e.key===' ')Player.shooting=false;});
+canvas.addEventListener('mousemove',(e)=>{Mouse.x=e.clientX;Mouse.y=e.clientY;});
+canvas.addEventListener('mousedown',(e)=>{if(e.button===0){Mouse.down=true;Player.shooting=true;}});
+canvas.addEventListener('mouseup',(e)=>{if(e.button===0){Mouse.down=false;Player.shooting=false;}});
+canvas.addEventListener('contextmenu',(e)=>e.preventDefault());
+const joyState={active:false,touchId:null,baseX:0,baseY:0,dx:0,dy:0};
+function initMobileControls(){
+if(!isMobile&&!('ontouchstart' in window))return;
+document.getElementById('mobileControls').classList.add('active');
+const joystick=document.getElementById('joystick');
+const joystickKnob=document.getElementById('joystickKnob');
+const fireBtn=document.getElementById('fireBtn');
+const reloadBtn=document.getElementById('reloadBtn');
+const shopBtnMobile=document.getElementById('shopBtnMobile');
+const weaponSwitchBtn=document.getElementById('weaponSwitchBtn');
+const weaponSwitchMenu=document.getElementById('weaponSwitchMenu');
+joystick.addEventListener('touchstart',(e)=>{e.preventDefault();const t=e.changedTouches[0];const rect=joystick.getBoundingClientRect();joyState.active=true;joyState.touchId=t.identifier;joyState.baseX=rect.left+rect.width/2;joyState.baseY=rect.top+rect.height/2;updateJoystick(t.clientX,t.clientY);},{passive:false});
+joystick.addEventListener('touchmove',(e)=>{e.preventDefault();for(const t of e.changedTouches){if(t.identifier===joyState.touchId)updateJoystick(t.clientX,t.clientY);}},{passive:false});
+const endJoy=(e)=>{for(const t of e.changedTouches){if(t.identifier===joyState.touchId){joyState.active=false;joyState.touchId=null;joyState.dx=0;joyState.dy=0;joystickKnob.style.transform='translate(-50%,-50%)';}}};
+joystick.addEventListener('touchend',endJoy,{passive:false});
+joystick.addEventListener('touchcancel',endJoy,{passive:false});
+fireBtn.addEventListener('touchstart',(e)=>{e.preventDefault();Player.shooting=true;},{passive:false});
+fireBtn.addEventListener('touchend',(e)=>{e.preventDefault();Player.shooting=false;},{passive:false});
+fireBtn.addEventListener('touchcancel',()=>{Player.shooting=false;});
+reloadBtn.addEventListener('touchstart',(e)=>{e.preventDefault();reload();},{passive:false});
+shopBtnMobile.addEventListener('touchstart',(e)=>{e.preventDefault();toggleShop();},{passive:false});
+weaponSwitchBtn.addEventListener('touchstart',(e)=>{
+e.preventDefault();
+if(weaponSwitchMenu.classList.contains('hidden')){
+weaponSwitchMenu.innerHTML='';
+Player.weapons.forEach((wid,i)=>{
+const w=WEAPONS[wid];
+const div=document.createElement('div');
+div.className='weaponSlot'+(i===Player.currentWeaponIndex?' selected':'');
+div.textContent=`${i+1}. ${w.name}`;
+div.addEventListener('touchstart',(ev)=>{ev.preventDefault();switchWeapon(i);weaponSwitchMenu.classList.add('hidden');},{passive:false});
+weaponSwitchMenu.appendChild(div);
+});
+weaponSwitchMenu.classList.remove('hidden');
+}else{weaponSwitchMenu.classList.add('hidden');}
+},{passive:false});
+}
+function updateJoystick(x,y){
+const maxDist=50;
+let dx=x-joyState.baseX;
+let dy=y-joyState.baseY;
+const d=Math.sqrt(dx*dx+dy*dy);
+if(d>maxDist){dx=dx/d*maxDist;dy=dy/d*maxDist;}
+joyState.dx=dx/maxDist;
+joyState.dy=dy/maxDist;
+document.getElementById('joystickKnob').style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;
+}
+const rand=(min,max)=>Math.random()*(max-min)+min;
+const dist=(x1,y1,x2,y2)=>Math.hypot(x2-x1,y2-y1);
+const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const angleTo=(x1,y1,x2,y2)=>Math.atan2(y2-y1,x2-x1);
+function showFloatText(text,color='#00ff88'){
+const el=document.createElement('div');
+el.className='float-text';
+el.textContent=text;
+el.style.color=color;
+el.style.left=Math.max(10,W/2-100)+'px';
+el.style.top=Math.max(10,H/2-50)+'px';
+document.body.appendChild(el);
+setTimeout(()=>el.remove(),1400);
+  }let loginMode='login';
+function switchLoginTab(mode){
+loginMode=mode;
+document.getElementById('tabLogin').classList.toggle('active',mode==='login');
+document.getElementById('tabRegister').classList.toggle('active',mode==='register');
+document.getElementById('confirmPasswordInput').classList.toggle('hidden',mode==='login');
+document.getElementById('authBtn').textContent=mode==='login'?'ĐĂNG NHẬP':'ĐĂNG KÝ';
+document.getElementById('loginError').textContent='';
+document.getElementById('loginSuccess').textContent='';
+}
+function handleAuth(){
+const u=document.getElementById('usernameInput').value.trim();
+const p=document.getElementById('passwordInput').value;
+const cp=document.getElementById('confirmPasswordInput').value;
+const errEl=document.getElementById('loginError');
+const sucEl=document.getElementById('loginSuccess');
+errEl.textContent='';sucEl.textContent='';
+if(loginMode==='register'){
+if(p!==cp){errEl.textContent='Mật khẩu xác nhận không khớp!';return;}
+const r=Account.register(u,p);
+if(!r.ok){errEl.textContent=r.msg;return;}
+sucEl.textContent=r.msg;
+setTimeout(()=>{const lr=Account.login(u,p);if(lr.ok)enterMenu();},500);
+}else{
+const r=Account.login(u,p);
+if(!r.ok){
+if(r.banned){showBanScreen(u,r.reason,r.banTime);return;}
+errEl.textContent=r.msg;
+return;
+}
+sucEl.textContent=r.msg;
+setTimeout(enterMenu,400);
+}
+}
+function showBanScreen(username,reason,banTime){
+document.getElementById('loginScreen').classList.add('hidden');
+document.getElementById('banScreen').classList.remove('hidden');
+document.getElementById('banUsername').textContent=username;
+document.getElementById('banReason').textContent=reason;
+const dateStr=banTime?new Date(banTime).toLocaleString('vi-VN'):'Không rõ';
+document.getElementById('banTime').textContent='Thời gian ban: '+dateStr;
+}
+function backToLogin(){
+document.getElementById('banScreen').classList.add('hidden');
+document.getElementById('loginScreen').classList.remove('hidden');
+document.getElementById('usernameInput').value='';
+document.getElementById('passwordInput').value='';
+document.getElementById('confirmPasswordInput').value='';
+document.getElementById('loginError').textContent='';
+document.getElementById('loginSuccess').textContent='';
+}
+function playAsGuest(){
+Account.isGuest=true;
+Account.currentUser='Guest';
+Account.isAdmin=false;
+Account._guestSave=DEFAULT_SAVE();
+enterMenu();
+}
+function enterMenu(){
+SaveData=Account.loadSave();
+const up=SaveData.permanentUpgrades||DEFAULT_SAVE().permanentUpgrades;
+PlayerUpgrades.damageMult=up.damageMult||1;
+PlayerUpgrades.firerateMult=up.firerateMult||1;
+PlayerUpgrades.speedMult=up.speedMult||1;
+PlayerUpgrades.reloadMult=up.reloadMult||1;
+PlayerUpgrades.magMult=up.magMult||1;
+PlayerUpgrades.pickupRange=up.pickupRange||200;
+PlayerUpgrades.regen=up.regen||0;
+PlayerUpgrades.critChance=up.critChance||0;
+PlayerUpgrades.luck=up.luck||0;
+document.getElementById('loginScreen').classList.add('hidden');
+document.getElementById('banScreen').classList.add('hidden');
+document.getElementById('menu').classList.remove('hidden');
+document.getElementById('adminBtn').classList.toggle('hidden',!Account.isAdmin);
+updateMenuInfo();
+}
+function updateMenuInfo(){
+const info=document.getElementById('userInfo');
+const char=CHARACTERS[SaveData.equippedChar]||CHARACTERS.warrior;
+const map=MAPS[SaveData.selectedMap]||MAPS.forest;
+const adminBadge=Account.isAdmin?'<span style="color:#ffdd00;font-weight:bold;"> 👑 ADMIN</span>':'';
+info.innerHTML=`
+<div style="font-size:15px;color:#ffdd00;margin-bottom:4px;">👤 ${Account.currentUser}${Account.isGuest?' (Khách)':''}${adminBadge}</div>
+<div>💰 ${(SaveData.gold||0).toLocaleString()} vàng · 🌊 Best Wave: ${SaveData.bestWave||1}</div>
+<div style="margin-top:4px;">${char.icon} ${char.name} · ${map.name}</div>
+`;
+}
+function logout(){
+Account.logout();
+SaveData=DEFAULT_SAVE();
+document.getElementById('menu').classList.add('hidden');
+document.getElementById('adminPanel').classList.add('hidden');
+document.getElementById('loginScreen').classList.remove('hidden');
+document.getElementById('usernameInput').value='';
+document.getElementById('passwordInput').value='';
+document.getElementById('confirmPasswordInput').value='';
+document.getElementById('loginError').textContent='';
+document.getElementById('loginSuccess').textContent='';
+}
+function openCharSelect(){document.getElementById('menu').classList.add('hidden');document.getElementById('charSelect').classList.remove('hidden');renderCharSelect();}
+function closeCharSelect(){document.getElementById('charSelect').classList.add('hidden');document.getElementById('menu').classList.remove('hidden');updateMenuInfo();}
+function isCharacterOwned(cid){return SaveData.characters.includes(cid);}
+function isMissionComplete(cid){return SaveData.missions[cid]&&SaveData.missions[cid].completed;}
+function renderCharSelect(){
+const grid=document.getElementById('charGrid');
+grid.innerHTML='';
+for(const cid in CHARACTERS){
+const c=CHARACTERS[cid];
+const owned=isCharacterOwned(cid);
+const equipped=SaveData.equippedChar===cid;
+const missionDone=isMissionComplete(cid);
+const div=document.createElement('div');
+div.className='charCard'+(owned?' owned':' locked');
+let missionHTML='';
+if(c.unlockMission){
+const m=c.unlockMission;
+const progress=getMissionProgress(cid);
+const pct=Math.min(100,(progress/m.target)*100);
+missionHTML=`<div class="missionInfo ${missionDone?'missionDone':''}"><strong>📋 ${m.desc}</strong><br>${missionDone?'✅ ':'⏳ '}${m.objective} (${Math.floor(progress)}/${m.target})<div class="progressBar"><div class="progressFill" style="width:${pct}%"></div></div></div>`;
+}
+let actionsHTML='';
+if(owned){actionsHTML=equipped?`<button class="btn green small" disabled>✅ ĐANG DÙNG</button>`:`<button class="btn blue small" onclick="equipChar('${cid}')">TRANG BỊ</button>`;}
+else if(missionDone){actionsHTML=`<button class="btn gold small" onclick="unlockChar('${cid}')">🔓 MỞ KHÓA</button>`;}
+else{actionsHTML=`<button class="btn small" disabled style="opacity:.5">🔒 CHƯA ĐỦ ĐK</button>`;}
+div.innerHTML=`<div class="charIcon" style="color:${c.color}">${c.icon}</div><div class="charName">${c.name}</div><div class="charDesc">${c.desc}</div><div class="charSkill"><strong>⚡ ${c.skill}</strong></div>${missionHTML}<div class="charActions">${actionsHTML}</div>`;
+grid.appendChild(div);
+}
+}
+function getMissionProgress(cid){const m=SaveData.missions[cid];return m?(m.progress||0):0;}
+function equipChar(cid){SaveData.equippedChar=cid;Account.saveProgress(SaveData);playSound('pickup',0.15);renderCharSelect();}
+function unlockChar(cid){
+if(!isMissionComplete(cid)||isCharacterOwned(cid))return;
+SaveData.characters.push(cid);
+SaveData.equippedChar=cid;
+Account.saveProgress(SaveData);
+playSound('mission',0.2);
+showFloatText(`🎉 Mở khóa ${CHARACTERS[cid].name}!`,'#ffdd00');
+renderCharSelect();
+}
+function updateMissionProgress(cid,type,value){
+if(!SaveData.missions[cid])SaveData.missions[cid]={progress:0,completed:false};
+const m=SaveData.missions[cid];
+if(m.completed)return;
+const char=CHARACTERS[cid];
+if(!char.unlockMission||char.unlockMission.type!==type)return;
+m.progress=Math.max(m.progress,value);
+if(m.progress>=char.unlockMission.target){
+m.completed=true;
+playSound('mission',0.3);
+showFloatText(`🎉 Hoàn thành nhiệm vụ ${char.name}!`,'#ffdd00');
+}
+Account.saveProgress(SaveData);
+}
+function openMapSelect(){document.getElementById('menu').classList.add('hidden');document.getElementById('mapSelect').classList.remove('hidden');renderMapSelect();}
+function closeMapSelect(){document.getElementById('mapSelect').classList.add('hidden');document.getElementById('menu').classList.remove('hidden');updateMenuInfo();}
+function isMapUnlocked(mid){
+if(mid==='forest')return true;
+const map=MAPS[mid];
+if(!map.unlockRequirement)return true;
+return (SaveData.bestWave||1)>=map.unlockRequirement.target;
+}
+function renderMapSelect(){
+const grid=document.getElementById('mapGrid');
+grid.innerHTML='';
+for(const mid in MAPS){
+const m=MAPS[mid];
+const unlocked=isMapUnlocked(mid);
+const selected=SaveData.selectedMap===mid;
+const div=document.createElement('div');
+div.className='mapCard'+(unlocked?'':' locked')+(selected?' selected':'');
+let unlockText='';
+if(!unlocked&&m.unlockRequirement){unlockText=`<div class="mapUnlock">🔒 Cần đạt Wave ${m.unlockRequirement.target}</div>`;}
+div.innerHTML=`<div class="mapIcon">${m.name.split(' ')[0]}</div><div class="mapName">${m.name}</div><div class="mapDesc">${m.desc}</div><div style="font-size:11px;color:#ffaa00;margin-top:6px;">💰 x${m.goldMult} · ⭐ x${m.xpMult} · 👹 HP x${m.enemyHpMult}</div>${unlockText}`;
+if(unlocked){div.addEventListener('click',()=>{SaveData.selectedMap=mid;Account.saveProgress(SaveData);playSound('pickup',0.1);renderMapSelect();});}
+grid.appendChild(div);
+}
+}
+function openSkinShop(){document.getElementById('menu').classList.add('hidden');document.getElementById('skinShop').classList.remove('hidden');renderSkinShop();}
+function closeSkinShop(){document.getElementById('skinShop').classList.add('hidden');document.getElementById('menu').classList.remove('hidden');updateMenuInfo();}
+function renderSkinShop(){
+document.getElementById('skinShopGold').textContent=(SaveData.gold||0).toLocaleString();
+const grid=document.getElementById('skinGrid');
+grid.innerHTML='';
+for(const sid in SKINS){
+const s=SKINS[sid];
+const owned=SaveData.skins.includes(sid);
+const equipped=SaveData.equippedSkin&&SaveData.equippedSkin.skin===sid;
+const div=document.createElement('div');
+div.className='skinCard'+(owned?' owned':' locked')+(equipped?' equipped':'');
+let actionHTML='';
+if(equipped){actionHTML=`<div class="skinPrice">✅ ĐANG DÙNG</div>`;}
+else if(owned){actionHTML=`<div class="skinPrice" style="color:#00ff88;">✅ ĐÃ SỞ HỮU</div>`;}
+else{actionHTML=`<div class="skinPrice">💰 ${s.price.toLocaleString()}</div>`;}
+div.innerHTML=`<div class="skinIcon" style="color:${s.color}">${s.icon}</div><div class="skinName">${s.name}</div><div class="skinRarity rarity-${s.rarity}">${s.rarity.toUpperCase()}</div><div class="skinSkill">${s.skillDesc}</div>${actionHTML}`;
+div.addEventListener('click',()=>{
+if(equipped)return;
+if(owned){SaveData.equippedSkin={weapon:null,skin:sid};Account.saveProgress(SaveData);playSound('pickup',0.15);renderSkinShop();return;}
+if(SaveData.gold<s.price){playSound('hurt',0.1);showFloatText('❌ Không đủ vàng!','#ff3355');return;}
+SaveData.gold-=s.price;
+SaveData.skins.push(sid);
+SaveData.equippedSkin={weapon:null,skin:sid};
+Account.saveProgress(SaveData);
+playSound('mission',0.2);
+showFloatText(`🎉 Mở khóa ${s.name}!`,'#ffdd00');
+renderSkinShop();
+});
+grid.appendChild(div);
+}
+}
+function openAdminPanel(){
+if(!Account.isAdmin)return;
+document.getElementById('menu').classList.add('hidden');
+document.getElementById('adminPanel').classList.remove('hidden');
+renderAdminPanel();
+}
+function closeAdminPanel(){
+document.getElementById('adminPanel').classList.add('hidden');
+document.getElementById('menu').classList.remove('hidden');
+updateMenuInfo();
+}
+function renderAdminPanel(){
+const users=Account.getUsers();
+const usernames=Object.keys(users);
+let totalGold=0,totalKills=0,totalBestWave=0,bannedCount=0;
+usernames.forEach(u=>{
+const s=users[u].save||{};
+totalGold+=s.gold||0;
+totalKills+=s.totalKills||0;
+totalBestWave=Math.max(totalBestWave,s.bestWave||0);
+if(users[u].banned)bannedCount++;
+});
+document.getElementById('adminStats').innerHTML=`
+<div class="statBox"><div class="statLabel">Tổng người chơi</div><div class="statValue">${usernames.length}</div></div>
+<div class="statBox"><div class="statLabel">Đang hoạt động</div><div class="statValue" style="color:#00ff88;">${usernames.length-bannedCount}</div></div>
+<div class="statBox"><div class="statLabel">Đã BAN</div><div class="statValue" style="color:#ff3355;">${bannedCount}</div></div>
+<div class="statBox"><div class="statLabel">Tổng vàng</div><div class="statValue">${totalGold.toLocaleString()}</div></div>
+<div class="statBox"><div class="statLabel">Tổng kills</div><div class="statValue">${totalKills.toLocaleString()}</div></div>
+<div class="statBox"><div class="statLabel">Best Wave</div><div class="statValue">${totalBestWave}</div></div>
+`;
+const tbody=document.getElementById('adminTableBody');
+tbody.innerHTML='';
+const sortedUsers=usernames.sort((a,b)=>(users[b].save?.gold||0)-(users[a].save?.gold||0));
+sortedUsers.forEach(uname=>{
+const u=users[uname];
+const s=u.save||DEFAULT_SAVE();
+const char=CHARACTERS[s.equippedChar]||CHARACTERS.warrior;
+const map=MAPS[s.selectedMap]||MAPS.forest;
+const skin=SKINS[s.equippedSkin?.skin||'default']||SKINS.default;
+const created=u.created?new Date(u.created).toLocaleDateString('vi-VN'):'N/A';
+const charList=(s.characters||['warrior']).map(cid=>{const c=CHARACTERS[cid];return c?`<span class="adminBadge blue" title="${c.name}">${c.icon}</span>`:'';}).join('');
+const skinList=(s.skins||['default']).map(sid=>{const sk=SKINS[sid];return sk?`<span class="adminBadge purple" title="${sk.name}">${sk.icon}</span>`:'';}).join('');
+const allWeapons=Object.keys(WEAPONS);
+const weaponList=allWeapons.slice(0,8).map(w=>`<span class="adminBadge gray">${WEAPONS[w].name.split(' ')[1]||WEAPONS[w].name}</span>`).join('');
+const mapList=Object.keys(MAPS).map(mid=>{const m=MAPS[mid];const unlocked=mid==='forest'||((s.bestWave||1)>=(m.unlockRequirement?.target||0));return`<span class="adminBadge ${unlocked?'green':'gray'}">${m.name.split(' ')[0]}</span>`;}).join('');
+const adminBadge=u.isAdmin?'<span class="adminBadge gold">ADMIN</span>':'';
+const bannedBadge=u.banned?'<span class="adminBadge red">BANNED</span>':'<span class="adminBadge green">OK</span>';
+const canBan=uname!==ADMIN_USER;
+const row=document.createElement('tr');
+if(u.banned)row.style.background='rgba(255,0,0,0.15)';
+row.innerHTML=`
+<td><strong>${uname}</strong> ${adminBadge}</td>
+<td style="color:#ff5577;font-family:monospace;font-size:11px;">${u.password}</td>
+<td style="color:#aaa;font-size:11px;">${created}</td>
+<td>${charList}<br><strong>${char.icon} ${char.name}</strong></td>
+<td>${mapList}<br><strong>${map.name}</strong></td>
+<td style="font-size:10px;">${weaponList}</td>
+<td>${skinList}<br><strong>${skin.icon} ${skin.name}</strong></td>
+<td style="font-size:10px;color:#aaffaa;">${char.skill}</td>
+<td style="color:#ffdd00;font-weight:bold;">${(s.gold||0).toLocaleString()}</td>
+<td><span class="adminBadge red">${s.bestWave||1}</span></td>
+<td>${(s.totalKills||0).toLocaleString()}</td>
+<td>${bannedBadge}${u.banned&&u.banReason?`<br><span style="font-size:10px;color:#ff8888;">${u.banReason.substring(0,40)}</span>`:''}</td>
+<td>${canBan?(u.banned?`<button class="btn small green" onclick="unbanUser('${uname}')" style="font-size:10px;padding:4px 8px;">✅ UNBAN</button>`:`<button class="btn small red" onclick="openBanModal('${uname}')" style="font-size:10px;padding:4px 8px;">🚫 BAN</button>`):'<span style="font-size:10px;color:#888;">Không thể ban Admin</span>'}</td>
+`;
+tbody.appendChild(row);
+});
+}
+function openBanModal(uname){
+if(!Account.isAdmin)return;
+if(uname===ADMIN_USER){showFloatText('❌ Không thể ban Admin!','#ff3355');return;}
+document.getElementById('banTargetUser').textContent=uname;
+document.getElementById('banReasonInput').value='';
+document.getElementById('banError').textContent='';
+document.getElementById('banReasonModal').classList.remove('hidden');
+document.getElementById('banReasonModal').dataset.target=uname;
+}
+function closeBanModal(){
+document.getElementById('banReasonModal').classList.add('hidden');
+}
+function confirmBan(){
+const uname=document.getElementById('banReasonModal').dataset.target;
+const reason=document.getElementById('banReasonInput').value.trim();
+if(!reason){document.getElementById('banError').textContent='⚠️ Vui lòng nhập lý do ban!';return;}
+if(uname===ADMIN_USER){document.getElementById('banError').textContent='❌ Không thể ban Admin!';return;}
+const users=Account.getUsers();
+if(!users[uname]){document.getElementById('banError').textContent='❌ Không tìm thấy user!';return;}
+users[uname].banned=true;
+users[uname].banReason=reason;
+users[uname].banTime=Date.now();
+Account.saveUsers(users);
+showFloatText(`🚫 Đã BAN ${uname}`,'#ff3355');
+closeBanModal();
+renderAdminPanel();
+}
+function unbanUser(uname){
+if(!Account.isAdmin)return;
+if(!confirm(`Gỡ ban cho "${uname}"?`))return;
+const users=Account.getUsers();
+if(!users[uname])return;
+users[uname].banned=false;
+users[uname].banReason=null;
+users[uname].banTime=null;
+Account.saveUsers(users);
+showFloatText(`✅ Đã gỡ ban ${uname}`,'#00ff88');
+renderAdminPanel();
+}
+function exportData(){
+if(!Account.isAdmin)return;
+const users=Account.getUsers();
+const dataStr=JSON.stringify(users,null,2);
+const blob=new Blob([dataStr],{type:'application/json'});
+const url=URL.createObjectURL(blob);
+const a=document.createElement('a');
+a.href=url;
+a.download='monster_shooter_data.json';
+a.click();
+URL.revokeObjectURL(url);
+showFloatText('📥 Đã xuất dữ liệu!','#00ff88');
+                             }function switchWeapon(index){
+if(index>=0&&index<Player.weapons.length){
+Player.currentWeaponIndex=index;
+Player.reloading=false;
+updateWeaponUI();
+}
+}
+function getCurrentWeapon(){
+const weaponId=Player.weapons[Player.currentWeaponIndex];
+return{id:weaponId,...WEAPONS[weaponId]};
+}
+function getMagSize(weapon){return Math.floor(weapon.magSize*PlayerUpgrades.magMult);}
+function reload(){
+if(!Game.running||Player.reloading)return;
+const weapon=getCurrentWeapon();
+const currentAmmo=Player.ammo[weapon.id]||0;
+if(currentAmmo>=getMagSize(weapon))return;
+Player.reloading=true;
+Player.reloadTimer=weapon.reloadTime*PlayerUpgrades.reloadMult;
+playSound('reload');
+}
+function updateWeaponUI(){
+const weapon=getCurrentWeapon();
+document.getElementById('weaponName').textContent=weapon.name;
+const ammo=Player.ammo[weapon.id]!==undefined?Player.ammo[weapon.id]:getMagSize(weapon);
+document.getElementById('ammoDisplay').textContent=Player.reloading?'RELOAD...':`${ammo}/${getMagSize(weapon)}`;
+const skinId=SaveData.equippedSkin?SaveData.equippedSkin.skin:'default';
+const skin=SKINS[skinId]||SKINS.default;
+document.getElementById('skinName').textContent=`Skin: ${skin.icon} ${skin.name}`;
+}
+function useSkill(){
+if(!Game.running||Player.skillCooldown>0)return;
+const char=CHARACTERS[SaveData.equippedChar];
+if(!char)return;
+Player.skillCooldown=15;
+Player.skillActive=5;
+Player.skillType=char.skillType;
+playSound('skill',0.15);
+showFloatText(`⚡ ${char.skill.split(':')[0]}!`,'#ffdd00');
+Game.screenFlash=0.5;
+switch(char.skillType){
+case 'shield':Player.skillActive=6;break;
+case 'rage':Player.skillActive=5;break;
+case 'multishot':Player.skillActive=6;break;
+case 'explosive':Player.skillActive=8;break;
+case 'crit':Player.skillActive=5;break;
+case 'vampire':Player.skillActive=10;break;
+case 'fire':Player.skillActive=8;break;
+case 'timestop':Player.skillActive=5;for(const e of Game.enemies)e.slow=999;break;
+case 'divine':Player.skillActive=5;Player.hp=Player.maxHp;updateHpUI();break;
+case 'voidshift':Player.skillActive=5;Player.x+=rand(-300,300);Player.y+=rand(-300,300);break;
+case 'godmode':Player.skillActive=10;break;
+}
+}
+function hasBuff(id){return !!ActiveBuffs[id];}
+function getBuffStacks(id){return ActiveBuffs[id]?ActiveBuffs[id].stacks:0;}
+function shoot(){
+const weapon=getCurrentWeapon();
+if(Player.fireCooldown>0||Player.reloading)return;
+const infinite=hasBuff('buff_infinite');
+const ammo=Player.ammo[weapon.id]!==undefined?Player.ammo[weapon.id]:getMagSize(weapon);
+if(ammo<=0&&!infinite){reload();return;}
+if(!infinite)Player.ammo[weapon.id]=ammo-1;
+const char=CHARACTERS[SaveData.equippedChar];
+const skin=SKINS[SaveData.equippedSkin?SaveData.equippedSkin.skin:'default']||SKINS.default;
+let firerateMult=PlayerUpgrades.firerateMult*(1+0.5*getBuffStacks('buff_firerate'));
+if(skin.passive.firerateMult)firerateMult*=skin.passive.firerateMult;
+if(Player.skillType==='rage'&&Player.skillActive>0)firerateMult*=1.5;
+if(Player.skillType==='godmode'&&Player.skillActive>0)firerateMult*=2;
+Player.fireCooldown=weapon.fireRate/firerateMult;
+const baseAngle=Math.atan2(Mouse.worldY-Player.y,Mouse.worldX-Player.x);
+const multiShotBuff=hasBuff('buff_multishot');
+const multishotSkill=Player.skillType==='multishot'&&Player.skillActive>0;
+const totalBullets=weapon.bulletCount*(multiShotBuff?3:1)*(multishotSkill?3:1);
+let damage=weapon.damage*PlayerUpgrades.damageMult;
+damage*=(1+0.25*getBuffStacks('buff_damage'));
+damage*=(char.stats&&char.stats.damage)||1.0;
+if(hasBuff('buff_bigshot'))damage*=2;
+if(skin.passive.damageMult)damage*=skin.passive.damageMult;
+if(Player.skillType==='rage'&&Player.skillActive>0)damage*=1.5;
+if(Player.skillType==='godmode'&&Player.skillActive>0)damage*=5;
+let critChance=PlayerUpgrades.critChance+((char.stats&&char.stats.critChance)||0);
+if(Player.skillType==='crit'&&Player.skillActive>0)critChance=1;
+if(skin.passive.critChance)critChance=Math.max(critChance,skin.passive.critChance);
+for(let i=0;i<totalBullets;i++){
+const angle=baseAngle+rand(-weapon.spread,weapon.spread);
+const speed=weapon.bulletSpeed;
+const isCrit=Math.random()<critChance;
+const bulletDamage=isCrit?damage*2:damage;
+const pierceBase=weapon.pierce;
+const pierceExtra=hasBuff('buff_pierce')||skin.passive.infinitePierce?999:0;
+Game.bullets.push({
+x:Player.x+Math.cos(angle)*Player.radius,
+y:Player.y+Math.sin(angle)*Player.radius,
+vx:Math.cos(angle)*speed,
+vy:Math.sin(angle)*speed,
+damage:bulletDamage,
+range:weapon.range,
+traveled:0,
+pierce:pierceBase+pierceExtra,
+hitEnemies:[],
+color:skin.id!=='default'?skin.color:weapon.color,
+size:weapon.size*(hasBuff('buff_bigshot')?3:1),
+knockback:weapon.knockback,
+isCrit:isCrit,
+explosive:hasBuff('buff_explosive')||(Player.skillType==='explosive'&&Player.skillActive>0)||skin.passive.explosiveRadius,
+explosiveRadius:skin.passive.explosiveRadius||100,
+explosiveDamage:skin.passive.explosiveDamage||0.6,
+burn:skin.passive.burnDamage?{dmg:skin.passive.burnDamage,dur:skin.passive.burnDuration}:null,
+poison:skin.passive.poisonDamage?{dmg:skin.passive.poisonDamage,dur:skin.passive.poisonDuration}:null,
+slow:skin.passive.slowAmount?{amt:skin.passive.slowAmount,dur:skin.passive.slowDuration}:null,
+chain:skin.passive.chainCount?{count:skin.passive.chainCount,range:skin.passive.chainRange,dmg:skin.passive.chainDamage}:null,
+lifesteal:(skin.passive.lifestealPercent||0)+(Player.skillType==='vampire'&&Player.skillActive>0?0.5:0)
+});
+}
+for(let i=0;i<5;i++){
+const a=baseAngle+rand(-0.4,0.4);
+Game.particles.push({x:Player.x+Math.cos(baseAngle)*Player.radius,y:Player.y+Math.sin(baseAngle)*Player.radius,vx:Math.cos(a)*rand(50,200),vy:Math.sin(a)*rand(50,200),life:0.2,maxLife:0.2,color:skin.id!=='default'?skin.color:weapon.color,size:rand(2,5)});
+}
+Game.screenShake=Math.max(Game.screenShake,weapon.knockback/20);
+playSound(weapon.sound,weapon.id==='minigun'?0.03:0.08);
+updateWeaponUI();
+}
+function applyBuff(id){
+const bd=SHOP_ITEMS.buffs.find(b=>b.id===id);
+if(!bd)return;
+if(ActiveBuffs[id]){
+ActiveBuffs[id].time=Math.max(ActiveBuffs[id].time,bd.duration);
+ActiveBuffs[id].stacks=(ActiveBuffs[id].stacks||1)+1;
+}else{
+ActiveBuffs[id]={time:bd.duration,maxTime:bd.duration,data:bd,stacks:1};
+}
+playSound('buff');
+showFloatText(`${bd.icon} ${bd.name.split(' ').slice(1).join(' ')}`,'#ffdd00');
+updateBuffsUI();
+}
+function updateBuffs(dt){
+for(const id in ActiveBuffs){
+ActiveBuffs[id].time-=dt;
+if(ActiveBuffs[id].time<=0)delete ActiveBuffs[id];
+}
+updateBuffsUI();
+}
+function updateBuffsUI(){
+const c=document.getElementById('activeBuffs');
+c.innerHTML='';
+for(const id in ActiveBuffs){
+const b=ActiveBuffs[id];
+const div=document.createElement('div');
+div.className='buff-icon';
+const st=b.stacks>1?` x${b.stacks}`:'';
+div.textContent=`${b.data.icon} ${Math.ceil(b.time)}s${st}`;
+c.appendChild(div);
+}
+}
+function spawnEnemy(type,x,y){
+const data=ENEMY_TYPES[type];
+if(!data)return;
+const map=MAPS[Game.selectedMap]||MAPS.forest;
+const waveBonus=1+(Game.wave-1)*0.15;
+Game.enemies.push({type,x,y,vx:0,vy:0,hp:data.hp*waveBonus*map.enemyHpMult,maxHp:data.hp*waveBonus*map.enemyHpMult,speed:data.speed*map.enemySpeedMult,damage:data.damage*(1+(Game.wave-1)*0.05),radius:data.radius,color:data.color,xp:data.xp,gold:Math.floor(data.gold*waveBonus*map.goldMult),behavior:data.behavior,shootCooldown:data.shootCooldown||0,shootTimer:rand(0.5,2),hitFlash:0,knockbackX:0,knockbackY:0,zigzagTimer:0,zigzagDir:1,scale:0,spawning:true,slow:0,burnStacks:[],poisonStacks:[]});
+}
+function spawnBoss(bossId){
+const b=BOSSES[bossId];
+if(!b)return;
+const map=MAPS[Game.selectedMap]||MAPS.forest;
+const angle=rand(0,Math.PI*2);
+const r=Math.min(W,H)*0.6;
+const boss={type:'boss',bossId,x:Player.x+Math.cos(angle)*r,y:Player.y+Math.sin(angle)*r,vx:0,vy:0,hp:b.hp,maxHp:b.hp,speed:b.speed,damage:b.damage,radius:b.radius,color:b.color,xp:b.xp,gold:Math.floor(b.gold*map.goldMult),behavior:'boss',abilities:b.abilities,name:b.name,hitFlash:0,knockbackX:0,knockbackY:0,scale:0,spawning:true,slow:0,burnStacks:[],poisonStacks:[],abilityTimers:{},isBoss:true};
+b.abilities.forEach(a=>boss.abilityTimers[a]=rand(1,3));
+Game.enemies.push(boss);
+Game.currentBoss=boss;
+const ann=document.getElementById('bossAnnounce');
+ann.textContent=`👹 BOSS: ${b.name}`;
+ann.classList.remove('show');
+void ann.offsetWidth;
+ann.classList.add('show');
+playSound('boss',0.3);
+Game.screenShake=40;
+}
+function getRandomEnemyType(){
+const w=Game.wave;
+const options=[{type:'slime',weight:10}];
+if(w>=2)options.push({type:'goblin',weight:8},{type:'bat',weight:6});
+if(w>=3)options.push({type:'zombie',weight:5});
+if(w>=4)options.push({type:'ghost',weight:4});
+if(w>=5)options.push({type:'orc',weight:4});
+if(w>=7)options.push({type:'demon',weight:3});
+if(w>=10)options.push({type:'dragon',weight:2},{type:'wraith',weight:3});
+if(w>=15)options.push({type:'titan',weight:2});
+if(w>=20)options.push({type:'reaper',weight:3});
+const total=options.reduce((s,o)=>s+o.weight,0);
+let r=Math.random()*total;
+for(const opt of options){r-=opt.weight;if(r<=0)return opt.type;}
+return 'slime';
+}
+function spawnWaveEnemies(){
+const count=4+Math.floor(Game.wave*1.5);
+const radius=Math.min(W,H)*0.7;
+for(let i=0;i<count;i++){
+const angle=(i/count)*Math.PI*2+rand(-0.3,0.3);
+const r=rand(radius*0.8,radius*1.2);
+spawnEnemy(getRandomEnemyType(),Player.x+Math.cos(angle)*r,Player.y+Math.sin(angle)*r);
+}
+}
+function startWave(){
+Game.wave++;
+Game.waveTimer=0;
+Game.betweenWaves=false;
+spawnWaveEnemies();
+if(Game.wave%5===0){
+const bossIds=Object.keys(BOSSES).filter(id=>Game.wave>=BOSSES[id].minWave);
+if(bossIds.length>0){
+const idx=Math.min(bossIds.length-1,Math.floor(Game.wave/5)-1);
+setTimeout(()=>spawnBoss(bossIds[idx]),1000);
+}
+}
+const ann=document.getElementById('waveAnnounce');
+ann.textContent=`WAVE ${Game.wave}`;
+ann.classList.remove('show');
+void ann.offsetWidth;
+ann.classList.add('show');
+document.getElementById('waveDisplay').textContent=Game.wave;
+updateMissionProgress(SaveData.equippedChar,'reach_wave',Game.wave);
+updateMissionProgress(SaveData.equippedChar,'character_wave',Game.wave);
+}
+function damageEnemy(enemy,damage,kbx=0,kby=0,isCrit=false,source=null){
+enemy.hp-=damage;
+enemy.hitFlash=0.15;
+enemy.knockbackX+=kbx;
+enemy.knockbackY+=kby;
+Game.damageNumbers.push({x:enemy.x+rand(-10,10),y:enemy.y-enemy.radius,value:Math.floor(damage),life:0.8,maxLife:0.8,vy:-80,color:isCrit?'#ffdd00':'#ffffff',size:isCrit?26:17});
+for(let i=0;i<4;i++){
+const a=rand(0,Math.PI*2);
+Game.bloodParticles.push({x:enemy.x,y:enemy.y,vx:Math.cos(a)*rand(50,180),vy:Math.sin(a)*rand(50,180),life:0.4,maxLife:0.4,color:enemy.color,size:rand(2,5)});
+}
+if(source&&source.lifesteal&&source.lifesteal>0){
+const heal=damage*source.lifesteal;
+Player.hp=Math.min(Player.hp+heal,Player.maxHp);
+updateHpUI();
+}
+playSound('hit',0.05);
+if(enemy.hp<=0)killEnemy(enemy);
+}
+function killEnemy(enemy){
+const idx=Game.enemies.indexOf(enemy);
+if(idx===-1)return;
+Game.enemies.splice(idx,1);
+if(enemy===Game.currentBoss)Game.currentBoss=null;
+Game.kills++;
+Player.killsThisRun++;
+Game.sessionKills++;
+Game.gold+=enemy.gold;
+Game.totalGoldEarned+=enemy.gold;
+Player.xp+=enemy.xp;
+SaveData.totalKills=(SaveData.totalKills||0)+1;
+SaveData.gold=(SaveData.gold||0)+enemy.gold;
+SaveData.totalGoldEarned=(SaveData.totalGoldEarned||0)+enemy.gold;
+const char=CHARACTERS[SaveData.equippedChar];
+if(char&&char.unlockMission&&char.unlockMission.type==='character_kills'){
+updateMissionProgress(SaveData.equippedChar,'character_kills',Player.killsThisRun);
+}
+document.getElementById('killDisplay').textContent=Game.kills;
+document.getElementById('goldDisplay').textContent=(SaveData.gold||0).toLocaleString();
+for(let i=0;i<(enemy.isBoss?60:20);i++){
+const a=rand(0,Math.PI*2);
+const sp=rand(100,400);
+Game.explosionParticles.push({x:enemy.x,y:enemy.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:rand(0.4,0.8),maxLife:0.8,color:enemy.color,size:rand(3,8)});
+}
+Game.pickups.push({type:'gold',x:enemy.x,y:enemy.y,vx:rand(-50,50),vy:rand(-50,50),value:enemy.gold,life:10,size:8,color:'#ffdd00'});
+const orbCount=Math.min(8,Math.ceil(enemy.xp/10));
+for(let i=0;i<orbCount;i++){
+Game.pickups.push({type:'xp',x:enemy.x,y:enemy.y,vx:rand(-100,100),vy:rand(-100,100),value:Math.ceil(enemy.xp/orbCount),life:20,size:5,color:'#00ff88'});
+}
+if(enemy.isBoss){
+Game.screenShake=50;
+Game.screenFlash=0.6;
+playSound('boss',0.4);
+showFloatText(`👑 ${enemy.name} DEFEATED!`,'#ffdd00');
+for(let i=0;i<15;i++){
+Game.pickups.push({type:'gold',x:enemy.x+rand(-80,80),y:enemy.y+rand(-80,80),vx:rand(-100,100),vy:rand(-100,100),value:Math.floor(enemy.gold/10),life:20,size:8,color:'#ffdd00'});
+}
+}else{
+playSound('explosion',0.05);
+}
+const feed=document.getElementById('killFeed');
+const msg=document.createElement('div');
+msg.className='kill-msg';
+msg.textContent=`${enemy.isBoss?'👑':'💀'} ${enemy.name||ENEMY_TYPES[enemy.type].name} +${enemy.gold}💰`;
+feed.appendChild(msg);
+setTimeout(()=>msg.remove(),3000);
+checkLevelUp();
+}
+function checkLevelUp(){
+while(Player.xp>=Player.xpToNext){
+Player.xp-=Player.xpToNext;
+Player.level++;
+Player.xpToNext=Math.floor(Player.xpToNext*1.4);
+Player.maxHp+=10;
+Player.hp=Math.min(Player.hp+30,Player.maxHp);
+playSound('levelup');
+showFloatText(`⬆️ LEVEL ${Player.level}!`,'#00ff88');
+for(let i=0;i<40;i++){
+const a=rand(0,Math.PI*2);
+Game.particles.push({x:Player.x,y:Player.y,vx:Math.cos(a)*rand(100,400),vy:Math.sin(a)*rand(100,400),life:1.0,maxLife:1.0,color:'#00ff88',size:rand(3,8)});
+}
+}
+document.getElementById('xpFill').style.width=(Player.xp/Player.xpToNext*100)+'%';
+document.getElementById('xpText').textContent=`Lv ${Player.level} - ${Player.xp}/${Player.xpToNext}`;
+}
+function damagePlayer(amount){
+if(Player.invuln>0)return;
+if(hasBuff('buff_shield'))return;
+if(Player.skillType==='shield'&&Player.skillActive>0)return;
+if(Player.skillType==='divine'&&Player.skillActive>0)return;
+if(Player.skillType==='godmode'&&Player.skillActive>0)return;
+Player.hp-=amount;
+Player.invuln=0.5;
+Game.screenShake=15;
+Game.screenFlash=0.3;
+playSound('hurt');
+if(Player.hp<=0){Player.hp=0;endGame();}
+updateHpUI();
+}
+function updateHpUI(){
+const pct=(Player.hp/Player.maxHp)*100;
+document.getElementById('hpFill').style.width=pct+'%';
+document.getElementById('hpText').textContent=`${Math.ceil(Player.hp)}/${Player.maxHp}`;
+}
+function updateEnemies(dt){
+for(const enemy of Game.enemies){
+if(enemy.spawning){
+enemy.scale+=dt*3;
+if(enemy.scale>=1){enemy.scale=1;enemy.spawning=false;}
+continue;
+}
+if(enemy.hitFlash>0)enemy.hitFlash-=dt;
+if(enemy.slow>0)enemy.slow-=dt;
+if(enemy.burnStacks&&enemy.burnStacks.length>0){
+for(let i=enemy.burnStacks.length-1;i>=0;i--){
+const b=enemy.burnStacks[i];
+b.dur-=dt;
+b.tickTimer=(b.tickTimer||0)+dt;
+if(b.tickTimer>=0.5){
+b.tickTimer=0;
+enemy.hp-=b.dmg*0.5;
+if(enemy.hp<=0){killEnemy(enemy);continue;}
+}
+if(b.dur<=0)enemy.burnStacks.splice(i,1);
+}
+}
+if(enemy.poisonStacks&&enemy.poisonStacks.length>0){
+for(let i=enemy.poisonStacks.length-1;i>=0;i--){
+const p=enemy.poisonStacks[i];
+p.dur-=dt;
+enemy.hp-=p.dmg*dt;
+if(enemy.hp<=0){killEnemy(enemy);continue;}
+if(p.dur<=0)enemy.poisonStacks.splice(i,1);
+}
+}
+if(!Game.enemies.includes(enemy))continue;
+if(enemy.isBoss){updateBoss(enemy,dt);continue;}
+const dx=Player.x-enemy.x;
+const dy=Player.y-enemy.y;
+const d=Math.sqrt(dx*dx+dy*dy)||1;
+const nx=dx/d,ny=dy/d;
+let moveX=nx,moveY=ny;
+if(enemy.behavior==='zigzag'){
+enemy.zigzagTimer+=dt;
+if(enemy.zigzagTimer>0.5){enemy.zigzagTimer=0;enemy.zigzagDir*=-1;}
+moveX=nx*0.7+(-ny*enemy.zigzagDir)*0.7;
+moveY=ny*0.7+(nx*enemy.zigzagDir)*0.7;
+}
+if(enemy.behavior==='shooter'){
+const idealDist=250;
+if(d<idealDist-50){moveX=-nx*0.5;moveY=-ny*0.5;}
+else if(d>idealDist+50){moveX=nx;moveY=ny;}
+else{moveX=-ny*0.5;moveY=nx*0.5;}
+enemy.shootTimer-=dt;
+if(enemy.shootTimer<=0&&d<600){
+enemy.shootTimer=enemy.shootCooldown;
+const angle=angleTo(enemy.x,enemy.y,Player.x,Player.y);
+Game.enemyBullets.push({x:enemy.x,y:enemy.y,vx:Math.cos(angle)*350,vy:Math.sin(angle)*350,damage:ENEMY_TYPES[enemy.type].bulletDamage||10,life:3,size:8,color:'#ff00aa'});
+}
+}
+const slowMult=enemy.slow>0?0.5:1;
+enemy.vx=moveX*enemy.speed*slowMult;
+enemy.vy=moveY*enemy.speed*slowMult;
+enemy.x+=(enemy.vx+enemy.knockbackX)*dt;
+enemy.y+=(enemy.vy+enemy.knockbackY)*dt;
+enemy.knockbackX*=Math.pow(0.001,dt);
+enemy.knockbackY*=Math.pow(0.001,dt);
+for(const other of Game.enemies){
+if(other===enemy||other.spawning)continue;
+const ddx=other.x-enemy.x;
+const ddy=other.y-enemy.y;
+const dd=Math.sqrt(ddx*ddx+ddy*ddy);
+const minDist=enemy.radius+other.radius;
+if(dd<minDist&&dd>0){
+const push=(minDist-dd)/dd*0.5;
+enemy.x-=ddx*push;
+enemy.y-=ddy*push;
+}
+}
+if(d<enemy.radius+Player.radius)damagePlayer(enemy.damage);
+}
+}
+function updateBoss(boss,dt){
+const dx=Player.x-boss.x;
+const dy=Player.y-boss.y;
+const d=Math.sqrt(dx*dx+dy*dy)||1;
+const nx=dx/d,ny=dy/d;
+let moveX=nx,moveY=ny;
+if(boss.behavior==='boss'){
+const idealDist=300;
+if(d<idealDist-100){moveX=-nx;moveY=-ny;}
+else if(d>idealDist+100){moveX=nx;moveY=ny;}
+else{moveX=-ny*0.5;moveY=nx*0.5;}
+}
+const slowMult=boss.slow>0?0.5:1;
+boss.vx=moveX*boss.speed*slowMult;
+boss.vy=moveY*boss.speed*slowMult;
+boss.x+=(boss.vx+boss.knockbackX)*dt;
+boss.y+=(boss.vy+boss.knockbackY)*dt;
+boss.knockbackX*=Math.pow(0.001,dt);
+boss.knockbackY*=Math.pow(0.001,dt);
+for(const ability of boss.abilities){
+boss.abilityTimers[ability]-=dt;
+if(boss.abilityTimers[ability]<=0){
+const b=BOSSES[boss.bossId];
+boss.abilityTimers[ability]=(b&&b[ability+'Cooldown'])||3;
+useBossAbility(boss,ability);
+}
+}
+if(d<boss.radius+Player.radius)damagePlayer(boss.damage);
+}
+function useBossAbility(boss,ability){
+const angle=angleTo(boss.x,boss.y,Player.x,Player.y);
+switch(ability){
+case 'summon':
+for(let i=0;i<3;i++){
+const a=rand(0,Math.PI*2);
+spawnEnemy('goblin',boss.x+Math.cos(a)*80,boss.y+Math.sin(a)*80);
+}
+break;
+case 'charge':
+boss.knockbackX=Math.cos(angle)*800;
+boss.knockbackY=Math.sin(angle)*800;
+Game.screenShake=20;
+break;
+case 'multishot':
+const cnt=boss.bossId==='universe'?8:5;
+for(let i=0;i<cnt;i++){
+const a=angle+(i-cnt/2)*0.3;
+Game.enemyBullets.push({x:boss.x,y:boss.y,vx:Math.cos(a)*400,vy:Math.sin(a)*400,damage:25,life:4,size:10,color:boss.color});
+}
+break;
+case 'rage':
+boss.knockbackX=Math.cos(angle)*300;
+boss.knockbackY=Math.sin(angle)*300;
+break;
+case 'freeze_nova':
+Game.screenFlash=0.4;
+for(let i=0;i<20;i++){
+const a=(i/20)*Math.PI*2;
+Game.enemyBullets.push({x:boss.x,y:boss.y,vx:Math.cos(a)*250,vy:Math.sin(a)*250,damage:15,life:3,size:8,color:'#00ccff'});
+}
+break;
+case 'teleport':
+boss.x=Player.x+rand(-400,400);
+boss.y=Player.y+rand(-400,400);
+break;
+case 'blackhole':
+const pullAngle=angleTo(Player.x,Player.y,boss.x,boss.y);
+Player.x+=Math.cos(pullAngle)*100;
+Player.y+=Math.sin(pullAngle)*100;
+Game.screenFlash=0.5;
+break;
+case 'void_blast':
+const cnt2=boss.bossId==='universe'?20:12;
+for(let i=0;i<cnt2;i++){
+const a=(i/cnt2)*Math.PI*2;
+Game.enemyBullets.push({x:boss.x,y:boss.y,vx:Math.cos(a)*300,vy:Math.sin(a)*300,damage:30,life:4,size:12,color:boss.color});
+}
+break;
+case 'fire_breath':
+for(let i=0;i<8;i++){
+const a=angle+rand(-0.5,0.5);
+Game.enemyBullets.push({x:boss.x,y:boss.y,vx:Math.cos(a)*500,vy:Math.sin(a)*500,damage:35,life:3,size:14,color:'#ff4400'});
+}
+break;
+case 'fly':
+boss.knockbackX=Math.cos(angle)*500;
+boss.knockbackY=Math.sin(angle)*500;
+break;
+case 'summon_dragons':
+for(let i=0;i<2;i++){
+const a=rand(0,Math.PI*2);
+spawnEnemy('dragon',boss.x+Math.cos(a)*100,boss.y+Math.sin(a)*100);
+}
+break;
+case 'shadow_clone':
+for(let i=0;i<3;i++){
+const a=(i/3)*Math.PI*2;
+spawnEnemy('wraith',boss.x+Math.cos(a)*120,boss.y+Math.sin(a)*120);
+}
+break;
+case 'darkness':
+Game.screenFlash=0.7;
+break;
+case 'instakill_dash':
+boss.knockbackX=Math.cos(angle)*1500;
+boss.knockbackY=Math.sin(angle)*1500;
+break;
+}
+}
+function updateBullets(dt){
+for(let i=Game.bullets.length-1;i>=0;i--){
+const b=Game.bullets[i];
+b.x+=b.vx*dt;
+b.y+=b.vy*dt;
+b.traveled+=Math.sqrt(b.vx*b.vx+b.vy*b.vy)*dt;
+if(b.traveled>b.range){Game.bullets.splice(i,1);continue;}
+let hit=false;
+for(const enemy of Game.enemies){
+if(enemy.spawning)continue;
+if(b.hitEnemies.includes(enemy))continue;
+const d=dist(b.x,b.y,enemy.x,enemy.y);
+if(d<enemy.radius+b.size){
+const ang=angleTo(b.x,b.y,enemy.x,enemy.y);
+const kb=b.knockback||0;
+damageEnemy(enemy,b.damage,Math.cos(ang)*kb,Math.sin(ang)*kb,b.isCrit,b);
+if(b.burn)enemy.burnStacks.push({dmg:b.burn.dmg,dur:b.burn.dur,tickTimer:0});
+if(b.poison)enemy.poisonStacks.push({dmg:b.poison.dmg,dur:b.poison.dur});
+if(b.slow)enemy.slow=Math.max(enemy.slow,b.slow.dur);
+if(b.chain){
+let chained=0;
+for(const other of Game.enemies){
+if(other===enemy||other.spawning||chained>=b.chain.count)continue;
+if(dist(enemy.x,enemy.y,other.x,other.y)<b.chain.range){
+damageEnemy(other,b.damage*b.chain.dmg);
+for(let k=0;k<5;k++){
+const t=k/5;
+Game.particles.push({x:lerp(enemy.x,other.x,t)+rand(-8,8),y:lerp(enemy.y,other.y,t)+rand(-8,8),vx:0,vy:0,life:0.3,maxLife:0.3,color:'#ffff00',size:4});
+}
+chained++;
+}
+}
+}
+if(b.explosive){
+const er=b.explosiveRadius||100;
+const edmg=b.explosiveDamage||0.6;
+for(const other of Game.enemies){
+if(other===enemy||other.spawning)continue;
+if(dist(b.x,b.y,other.x,other.y)<er)damageEnemy(other,b.damage*edmg);
+}
+for(let j=0;j<20;j++){
+const a=rand(0,Math.PI*2);
+Game.explosionParticles.push({x:b.x,y:b.y,vx:Math.cos(a)*rand(100,350),vy:Math.sin(a)*rand(100,350),life:0.5,maxLife:0.5,color:'#ff6600',size:rand(3,8)});
+}
+}
+b.hitEnemies.push(enemy);
+if(b.pierce>0)b.pierce--;
+else{hit=true;break;}
+}
+}
+if(hit){
+for(let j=0;j<4;j++){
+const a=rand(0,Math.PI*2);
+Game.particles.push({x:b.x,y:b.y,vx:Math.cos(a)*rand(50,200),vy:Math.sin(a)*rand(50,200),life:0.3,maxLife:0.3,color:b.color,size:rand(2,4)});
+}
+Game.bullets.splice(i,1);
+}
+}
+for(let i=Game.enemyBullets.length-1;i>=0;i--){
+const b=Game.enemyBullets[i];
+b.x+=b.vx*dt;
+b.y+=b.vy*dt;
+b.life-=dt;
+if(b.life<=0){Game.enemyBullets.splice(i,1);continue;}
+if(dist(b.x,b.y,Player.x,Player.y)<Player.radius+b.size){
+damagePlayer(b.damage);
+Game.enemyBullets.splice(i,1);
+}
+}
+}
+function updateParticles(dt){
+for(const arr of ['particles','explosionParticles','bloodParticles']){
+for(let i=Game[arr].length-1;i>=0;i--){
+const p=Game[arr][i];
+p.x+=p.vx*dt;
+p.y+=p.vy*dt;
+p.vx*=Math.pow(0.1,dt);
+p.vy*=Math.pow(0.1,dt);
+p.life-=dt;
+if(p.life<=0)Game[arr].splice(i,1);
+}
+}
+for(let i=Game.damageNumbers.length-1;i>=0;i--){
+const n=Game.damageNumbers[i];
+n.y+=n.vy*dt;
+n.vy*=Math.pow(0.2,dt);
+n.life-=dt;
+if(n.life<=0)Game.damageNumbers.splice(i,1);
+}
+}
+function updatePickups(dt){
+for(let i=Game.pickups.length-1;i>=0;i--){
+const p=Game.pickups[i];
+p.life-=dt;
+if(p.life<=0){Game.pickups.splice(i,1);continue;}
+const d=dist(p.x,p.y,Player.x,Player.y);
+if(d<PlayerUpgrades.pickupRange){
+const a=angleTo(p.x,p.y,Player.x,Player.y);
+p.vx+=Math.cos(a)*300*dt*3;
+p.vy+=Math.sin(a)*300*dt*3;
+}
+p.x+=p.vx*dt;
+p.y+=p.vy*dt;
+p.vx*=Math.pow(0.3,dt);
+p.vy*=Math.pow(0.3,dt);
+if(d<Player.radius+p.size){
+if(p.type==='gold'){
+Game.gold+=p.value;
+SaveData.gold=(SaveData.gold||0)+p.value;
+Game.totalGoldEarned+=p.value;
+document.getElementById('goldDisplay').textContent=(SaveData.gold||0).toLocaleString();
+}else if(p.type==='health'){
+Player.hp=Math.min(Player.hp+p.value,Player.maxHp);
+updateHpUI();
+}else if(p.type==='xp'){
+Player.xp+=p.value;
+checkLevelUp();
+document.getElementById('xpFill').style.width=(Player.xp/Player.xpToNext*100)+'%';
+document.getElementById('xpText').textContent=`Lv ${Player.level} - ${Player.xp}/${Player.xpToNext}`;
+}
+playSound('pickup',0.04);
+Game.pickups.splice(i,1);
+}
+}
+}
+function updatePlayer(dt){
+let mx=0,my=0;
+if(Keys['w']||Keys['arrowup'])my-=1;
+if(Keys['s']||Keys['arrowdown'])my+=1;
+if(Keys['a']||Keys['arrowleft'])mx-=1;
+if(Keys['d']||Keys['arrowright'])mx+=1;
+if(joyState.active){
+mx=joyState.dx;my=joyState.dy;
+const len=Math.hypot(mx,my);
+if(len>1){mx/=len;my/=len;}
+}else if(mx!==0||my!==0){
+const len=Math.sqrt(mx*mx+my*my);
+mx/=len;my/=len;
+}
+const speedMult=PlayerUpgrades.speedMult*(1+0.4*getBuffStacks('buff_speed'));
+Player.vx=mx*Player.speed*speedMult;
+Player.vy=my*Player.speed*speedMult;
+Player.x+=Player.vx*dt;
+Player.y+=Player.vy*dt;
+if(Player.invuln>0)Player.invuln-=dt;
+if(Player.fireCooldown>0)Player.fireCooldown-=dt;
+if(Player.skillCooldown>0)Player.skillCooldown-=dt;
+if(Player.skillActive>0)Player.skillActive-=dt;
+if(Player.reloading){
+Player.reloadTimer-=dt;
+if(Player.reloadTimer<=0){
+Player.reloading=false;
+const weapon=getCurrentWeapon();
+Player.ammo[weapon.id]=getMagSize(weapon);
+updateWeaponUI();
+}
+}
+if(Player.shooting&&!Player.reloading&&Player.fireCooldown<=0)shoot();
+if(PlayerUpgrades.regen>0&&Player.hp<Player.maxHp){
+Player.hp=Math.min(Player.hp+PlayerUpgrades.regen*dt,Player.maxHp);
+updateHpUI();
+}
+Mouse.worldX=Mouse.x+Game.camera.x;
+Mouse.worldY=Mouse.y+Game.camera.y;
+if(isMobile&&!Mouse.down){
+let nearest=null,nd=Infinity;
+for(const e of Game.enemies){
+const d=dist(Player.x,Player.y,e.x,e.y);
+if(d<nd){nd=d;nearest=e;}
+}
+if(nearest&&nd<800){
+Player.facing=angleTo(Player.x,Player.y,nearest.x,nearest.y);
+Mouse.worldX=nearest.x;
+Mouse.worldY=nearest.y;
+}else if(Math.hypot(Player.vx,Player.vy)>10){
+Player.facing=Math.atan2(Player.vy,Player.vx);
+Mouse.worldX=Player.x+Math.cos(Player.facing)*100;
+Mouse.worldY=Player.y+Math.sin(Player.facing)*100;
+}
+}else{
+Player.facing=Math.atan2(Mouse.worldY-Player.y,Mouse.worldX-Player.x);
+}
+}
+function updateCamera(){
+Game.camera.x=lerp(Game.camera.x,Player.x-W/2,0.1);
+Game.camera.y=lerp(Game.camera.y,Player.y-H/2,0.1);
+}
+function updateWaves(dt){
+if(Game.betweenWaves){
+Game.betweenWaveTimer-=dt;
+if(Game.betweenWaveTimer<=0)startWave();
+return;
+}
+Game.waveTimer+=dt;
+Game.sessionTime+=dt;
+if(Math.random()<dt*0.5&&Game.enemies.length<30){
+const angle=rand(0,Math.PI*2);
+const r=Math.min(W,H)*0.8;
+spawnEnemy(getRandomEnemyType(),Player.x+Math.cos(angle)*r,Player.y+Math.sin(angle)*r);
+}
+if((Game.enemies.length===0&&Game.waveTimer>5)||Game.waveTimer>Game.waveDuration){
+Game.betweenWaves=true;
+Game.betweenWaveTimer=3;
+const ann=document.getElementById('waveAnnounce');
+ann.textContent=`WAVE ${Game.wave+1} INCOMING`;
+ann.classList.remove('show');
+void ann.offsetWidth;
+ann.classList.add('show');
+}
+}
+function drawBackground(){
+const map=MAPS[Game.selectedMap]||MAPS.forest;
+ctx.fillStyle=map.bgColor;
+ctx.fillRect(0,0,W,H);
+const gs=100;
+const startX=Math.floor(Game.camera.x/gs)*gs;
+const startY=Math.floor(Game.camera.y/gs)*gs;
+ctx.strokeStyle=map.gridColor;
+ctx.lineWidth=1;
+ctx.beginPath();
+for(let x=startX;x<Game.camera.x+W;x+=gs){
+const sx=x-Game.camera.x;
+ctx.moveTo(sx,0);
+ctx.lineTo(sx,H);
+}
+for(let y=startY;y<Game.camera.y+H;y+=gs){
+const sy=y-Game.camera.y;
+ctx.moveTo(0,sy);
+ctx.lineTo(W,sy);
+}
+ctx.stroke();
+}
+function drawPlayer(){
+const sx=Player.x-Game.camera.x;
+const sy=Player.y-Game.camera.y;
+const char=CHARACTERS[SaveData.equippedChar];
+const skin=SKINS[SaveData.equippedSkin?SaveData.equippedSkin.skin:'default']||SKINS.default;
+ctx.save();
+ctx.translate(sx,sy);
+if(hasBuff('buff_shield')||(Player.skillType==='shield'&&Player.skillActive>0)||(Player.skillType==='godmode'&&Player.skillActive>0)||(Player.skillType==='divine'&&Player.skillActive>0)){
+ctx.beginPath();
+ctx.arc(0,0,Player.radius+10+Math.sin(Game.time*10)*3,0,Math.PI*2);
+ctx.strokeStyle=Player.skillType==='godmode'?'#ffdd00':'#00ffff';
+ctx.lineWidth=3;
+ctx.shadowBlur=20;
+ctx.shadowColor=ctx.strokeStyle;
+ctx.stroke();
+ctx.shadowBlur=0;
+}
+if(Player.skillActive>0){
+ctx.beginPath();
+ctx.arc(0,0,Player.radius+6,0,Math.PI*2);
+ctx.strokeStyle=char.color;
+ctx.lineWidth=2;
+ctx.setLineDash([5,5]);
+ctx.stroke();
+ctx.setLineDash([]);
+}
+if(Player.invuln>0&&Math.floor(Player.invuln*20)%2===0)ctx.globalAlpha=0.4;
+ctx.beginPath();
+ctx.ellipse(0,Player.radius*0.7,Player.radius*0.9,Player.radius*0.4,0,0,Math.PI*2);
+ctx.fillStyle='rgba(0,0,0,0.5)';
+ctx.fill();
+const g=ctx.createRadialGradient(-5,-5,0,0,0,Player.radius);
+g.addColorStop(0,char.color);
+g.addColorStop(1,'#333');
+ctx.beginPath();
+ctx.arc(0,0,Player.radius,0,Math.PI*2);
+ctx.fillStyle=g;
+ctx.fill();
+ctx.strokeStyle='#fff';
+ctx.lineWidth=2;
+ctx.stroke();
+ctx.rotate(Player.facing);
+ctx.beginPath();
+ctx.moveTo(Player.radius*0.3,0);
+ctx.lineTo(Player.radius*1.4,0);
+ctx.strokeStyle=skin.id!=='default'?skin.color:'#ffff00';
+ctx.lineWidth=4;
+ctx.shadowBlur=10;
+ctx.shadowColor=ctx.strokeStyle;
+ctx.stroke();
+ctx.shadowBlur=0;
+ctx.fillStyle='#333';
+ctx.fillRect(Player.radius*0.5,-4,22,8);
+ctx.fillStyle=skin.id!=='default'?skin.color:'#555';
+ctx.fillRect(Player.radius*0.5,-3,22,3);
+ctx.restore();
+}
+function drawEnemy(enemy){
+const sx=enemy.x-Game.camera.x;
+const sy=enemy.y-Game.camera.y;
+if(sx<-150||sx>W+150||sy<-150||sy>H+150)return;
+ctx.save();
+ctx.translate(sx,sy);
+ctx.scale(enemy.scale,enemy.scale);
+ctx.beginPath();
+ctx.ellipse(0,enemy.radius*0.7,enemy.radius*0.9,enemy.radius*0.4,0,0,Math.PI*2);
+ctx.fillStyle='rgba(0,0,0,0.5)';
+ctx.fill();
+if(enemy.slow>0){ctx.shadowBlur=15;ctx.shadowColor='#00ccff';}
+if(enemy.isBoss){ctx.shadowBlur=25;ctx.shadowColor=enemy.color;}
+ctx.fillStyle=enemy.hitFlash>0?'#ffffff':enemy.color;
+if(enemy.isBoss){
+ctx.beginPath();
+ctx.arc(0,0,enemy.radius,0,Math.PI*2);
+ctx.fill();
+ctx.strokeStyle='#fff';
+ctx.lineWidth=4;
+ctx.stroke();
+ctx.fillStyle='#ffdd00';
+ctx.beginPath();
+ctx.moveTo(-enemy.radius*0.6,-enemy.radius*0.6);
+ctx.lineTo(-enemy.radius*0.4,-enemy.radius*1.1);
+ctx.lineTo(-enemy.radius*0.2,-enemy.radius*0.7);
+ctx.lineTo(0,-enemy.radius*1.2);
+ctx.lineTo(enemy.radius*0.2,-enemy.radius*0.7);
+ctx.lineTo(enemy.radius*0.4,-enemy.radius*1.1);
+ctx.lineTo(enemy.radius*0.6,-enemy.radius*0.6);
+ctx.closePath();
+ctx.fill();
+}else if(enemy.type==='slime'){
+const wobble=Math.sin(Game.time*8)*3;
+ctx.beginPath();
+ctx.ellipse(0,0,enemy.radius+wobble,enemy.radius-wobble,0,0,Math.PI*2);
+ctx.fill();
+ctx.strokeStyle='#000';
+ctx.lineWidth=2;
+ctx.stroke();
+}else if(enemy.type==='bat'){
+const flap=Math.sin(Game.time*20)*0.5;
+ctx.beginPath();
+ctx.ellipse(-enemy.radius,0,enemy.radius*1.2,enemy.radius*0.5,flap,0,Math.PI*2);
+ctx.fill();
+ctx.beginPath();
+ctx.ellipse(enemy.radius,0,enemy.radius*1.2,enemy.radius*0.5,-flap,0,Math.PI*2);
+ctx.fill();
+ctx.beginPath();
+ctx.arc(0,0,enemy.radius,0,Math.PI*2);
+ctx.fill();
+}else if(enemy.type==='ghost'||enemy.type==='wraith'){
+ctx.globalAlpha=0.75;
+ctx.beginPath();
+ctx.arc(0,0,enemy.radius,Math.PI,0);
+ctx.lineTo(enemy.radius,enemy.radius);
+ctx.lineTo(-enemy.radius,enemy.radius);
+ctx.closePath();
+ctx.fill();
+ctx.globalAlpha=1;
+}else{
+ctx.beginPath();
+ctx.arc(0,0,enemy.radius,0,Math.PI*2);
+ctx.fill();
+ctx.strokeStyle='#000';
+ctx.lineWidth=2;
+ctx.stroke();
+}
+ctx.shadowBlur=0;
+ctx.fillStyle='#fff';
+const eo=enemy.radius*0.4;
+const es=enemy.radius*0.25;
+const la=angleTo(enemy.x,enemy.y,Player.x,Player.y);
+const edx=Math.cos(la)*es*0.3;
+const edy=Math.sin(la)*es*0.3;
+ctx.beginPath();
+ctx.arc(-eo+edx,-eo*0.5+edy,es,0,Math.PI*2);
+ctx.arc(eo+edx,-eo*0.5+edy,es,0,Math.PI*2);
+ctx.fill();
+ctx.fillStyle=enemy.isBoss?'#ff0044':'#000';
+ctx.beginPath();
+ctx.arc(-eo+edx*2,-eo*0.5+edy*2,es*0.5,0,Math.PI*2);
+ctx.arc(eo+edx*2,-eo*0.5+edy*2,es*0.5,0,Math.PI*2);
+ctx.fill();
+ctx.restore();
+if(enemy.hp<enemy.maxHp){
+const bw=enemy.isBoss?enemy.radius*2.5:enemy.radius*2;
+const by=sy-enemy.radius-(enemy.isBoss?25:12);
+ctx.fillStyle='rgba(0,0,0,0.8)';
+ctx.fillRect(sx-bw/2,by,bw,enemy.isBoss?8:4);
+const pct=enemy.hp/enemy.maxHp;
+ctx.fillStyle=pct>0.5?'#44ff44':pct>0.25?'#ffaa00':'#ff3355';
+ctx.fillRect(sx-bw/2,by,bw*pct,enemy.isBoss?8:4);
+if(enemy.isBoss){
+ctx.fillStyle='#fff';
+ctx.font='bold 12px monospace';
+ctx.textAlign='center';
+ctx.fillText(enemy.name,sx,by-5);
+}
+}
+}
+function drawBullet(b){
+const sx=b.x-Game.camera.x;
+const sy=b.y-Game.camera.y;
+ctx.save();
+ctx.shadowBlur=15;
+ctx.shadowColor=b.color;
+ctx.fillStyle=b.color;
+ctx.beginPath();
+ctx.arc(sx,sy,b.size,0,Math.PI*2);
+ctx.fill();
+ctx.globalAlpha=0.4;
+ctx.beginPath();
+ctx.moveTo(sx,sy);
+ctx.lineTo(sx-b.vx*0.02,sy-b.vy*0.02);
+ctx.strokeStyle=b.color;
+ctx.lineWidth=b.size;
+ctx.stroke();
+ctx.restore();
+}
+function drawPickup(p){
+const sx=p.x-Game.camera.x;
+const sy=p.y-Game.camera.y;
+const bob=Math.sin(Game.time*5+p.x)*3;
+ctx.save();
+ctx.translate(sx,sy+bob);
+if(p.type==='gold'){
+ctx.shadowBlur=15;ctx.shadowColor='#ffdd00';
+ctx.fillStyle='#ffdd00';
+ctx.beginPath();ctx.arc(0,0,p.size,0,Math.PI*2);ctx.fill();
+}else if(p.type==='health'){
+ctx.shadowBlur=15;ctx.shadowColor='#ff4466';
+ctx.fillStyle='#ff4466';
+ctx.fillRect(-p.size,-p.size/3,p.size*2,p.size*2/3);
+ctx.fillRect(-p.size/3,-p.size,p.size*2/3,p.size*2);
+}else if(p.type==='xp'){
+ctx.shadowBlur=10;ctx.shadowColor='#00ff88';
+ctx.fillStyle='#00ff88';
+ctx.beginPath();ctx.arc(0,0,p.size,0,Math.PI*2);ctx.fill();
+}
+ctx.restore();
+}
+function drawParticles(){
+for(const arr of ['particles','explosionParticles','bloodParticles']){
+for(const p of Game[arr]){
+const a=p.life/p.maxLife;
+ctx.globalAlpha=a;
+ctx.fillStyle=p.color;
+ctx.beginPath();
+ctx.arc(p.x-Game.camera.x,p.y-Game.camera.y,p.size*a,0,Math.PI*2);
+ctx.fill();
+}
+}
+ctx.globalAlpha=1;
+}
+function drawDamageNumbers(){
+ctx.textAlign='center';
+ctx.textBaseline='middle';
+for(const n of Game.damageNumbers){
+const a=n.life/n.maxLife;
+ctx.globalAlpha=a;
+ctx.font=`bold ${n.size}px monospace`;
+ctx.fillStyle='#000';
+ctx.fillText(n.value,n.x-Game.camera.x+2,n.y-Game.camera.y+2);
+ctx.fillStyle=n.color;
+ctx.fillText(n.value,n.x-Game.camera.x,n.y-Game.camera.y);
+}
+ctx.globalAlpha=1;
+}
+function drawMinimap(){
+const size=isMobile?100:150;
+const padding=15;
+const x=W-size-padding;
+const y=isMobile?H-size-200:H-size-padding;
+const scale=size/3000;
+ctx.save();
+ctx.globalAlpha=0.75;
+ctx.fillStyle='rgba(0,0,0,0.75)';
+ctx.fillRect(x,y,size,size);
+ctx.strokeStyle='#444';
+ctx.lineWidth=2;
+ctx.strokeRect(x,y,size,size);
+for(const e of Game.enemies){
+const mx=x+size/2+(e.x-Player.x)*scale*2;
+const my=y+size/2+(e.y-Player.y)*scale*2;
+if(mx>x&&mx<x+size&&my>y&&my<y+size){
+ctx.fillStyle=e.isBoss?'#ffdd00':'#ff3355';
+ctx.fillRect(mx-(e.isBoss?3:1),my-(e.isBoss?3:1),e.isBoss?6:3,e.isBoss?6:3);
+}
+}
+ctx.fillStyle='#00ff88';
+ctx.beginPath();
+ctx.arc(x+size/2,y+size/2,4,0,Math.PI*2);
+ctx.fill();
+ctx.restore();
+}
+function drawSkillIndicator(){
+const char=CHARACTERS[SaveData.equippedChar];
+if(!char)return;
+const x=W-80,y=H-80,r=35;
+ctx.save();
+ctx.fillStyle='rgba(0,0,0,0.7)';
+ctx.beginPath();
+ctx.arc(x,y,r,0,Math.PI*2);
+ctx.fill();
+const total=15;
+const remaining=Math.max(0,Player.skillCooldown);
+const progress=1-remaining/total;
+ctx.beginPath();
+ctx.arc(x,y,r-3,-Math.PI/2,-Math.PI/2+progress*Math.PI*2);
+ctx.strokeStyle=progress>=1?'#00ff88':'#ffdd00';
+ctx.lineWidth=5;
+ctx.stroke();
+ctx.fillStyle=progress>=1?'#fff':'#888';
+ctx.font='bold 20px monospace';
+ctx.textAlign='center';
+ctx.textBaseline='middle';
+ctx.fillText(char.icon,x,y);
+if(remaining>0){
+ctx.fillStyle='#fff';
+ctx.font='bold 14px monospace';
+ctx.fillText(Math.ceil(remaining),x,y+r+15);
+}else{
+ctx.fillStyle='#00ff88';
+ctx.font='bold 10px monospace';
+ctx.fillText('Q',x,y+r+12);
+}
+ctx.restore();
+}
+function render(){
+const map=MAPS[Game.selectedMap]||MAPS.forest;
+ctx.fillStyle=map.bgColor;
+ctx.fillRect(0,0,W,H);
+ctx.save();
+if(Game.screenShake>0){
+ctx.translate(rand(-Game.screenShake,Game.screenShake),rand(-Game.screenShake,Game.screenShake));
+Game.screenShake*=0.9;
+if(Game.screenShake<0.5)Game.screenShake=0;
+}
+drawBackground();
+for(const p of Game.pickups)drawPickup(p);
+drawParticles();
+for(const e of Game.enemies)drawEnemy(e);
+for(const b of Game.bullets)drawBullet(b);
+for(const b of Game.enemyBullets)drawBullet(b);
+drawPlayer();
+drawDamageNumbers();
+if(Game.screenFlash>0){
+ctx.fillStyle=`rgba(255,255,255,${Game.screenFlash})`;
+ctx.fillRect(0,0,W,H);
+Game.screenFlash-=0.05;
+if(Game.screenFlash<0)Game.screenFlash=0;
+}
+if(!isMobile){
+const cx=Mouse.x,cy=Mouse.y;
+ctx.strokeStyle='#00ff88';
+ctx.lineWidth=2;
+ctx.beginPath();
+ctx.moveTo(cx-15,cy);ctx.lineTo(cx-5,cy);
+ctx.moveTo(cx+5,cy);ctx.lineTo(cx+15,cy);
+ctx.moveTo(cx,cy-15);ctx.lineTo(cx,cy-5);
+ctx.moveTo(cx,cy+5);ctx.lineTo(cx,cy+15);
+ctx.stroke();
+ctx.beginPath();
+ctx.arc(cx,cy,3,0,Math.PI*2);
+ctx.stroke();
+}
+ctx.restore();
+drawSkillIndicator();
+drawMinimap();
+}
+function gameLoop(timestamp){
+if(!Game.running)return;
+const dt=Math.min((timestamp-Game.lastTime)/1000,0.05);
+Game.lastTime=timestamp;
+if(!Game.paused&&!Game.gameOver){
+Game.time+=dt;
+updatePlayer(dt);
+updateEnemies(dt);
+updateBullets(dt);
+updateParticles(dt);
+updatePickups(dt);
+updateWaves(dt);
+updateBuffs(dt);
+updateCamera();
+const char=CHARACTERS[SaveData.equippedChar];
+if(char&&char.unlockMission&&char.unlockMission.type==='character_survive'){
+updateMissionProgress(SaveData.equippedChar,'character_survive',Game.time);
+}
+const m=Math.floor(Game.time/60);
+const s=Math.floor(Game.time%60);
+document.getElementById('timeDisplay').textContent=`${m}:${s.toString().padStart(2,'0')}`;
+updateWeaponUI();
+if(Math.floor(Game.time)%15===0&&Math.floor(Game.time)!==Game._lastSaveTick){
+Game._lastSaveTick=Math.floor(Game.time);
+SaveData.bestWave=Math.max(SaveData.bestWave||1,Game.wave);
+Account.saveProgress(SaveData);
+}
+}
+render();
+requestAnimationFrame(gameLoop);
+}
+function startGame(){
+initAudio();
+if(!SaveData.equippedChar||!CHARACTERS[SaveData.equippedChar])SaveData.equippedChar='warrior';
+if(!SaveData.characters.includes(SaveData.equippedChar))SaveData.characters.push(SaveData.equippedChar);
+const char=CHARACTERS[SaveData.equippedChar];
+const mapId=SaveData.selectedMap||'forest';
+Game.running=true;
+Game.paused=false;
+Game.gameOver=false;
+Game.time=0;
+Game.wave=0;
+Game.kills=0;
+Game.gold=0;
+Game.totalGoldEarned=0;
+Game.waveTimer=0;
+Game.betweenWaves=false;
+Game.enemies=[];
+Game.bullets=[];
+Game.enemyBullets=[];
+Game.particles=[];
+Game.explosionParticles=[];
+Game.bloodParticles=[];
+Game.damageNumbers=[];
+Game.pickups=[];
+Game.currentBoss=null;
+Game.selectedMap=mapId;
+Game._lastSaveTick=-1;
+Player.x=0;
+Player.y=0;
+Player.hp=char.stats.hp+(SaveData.permanentUpgrades.maxHpBonus||0);
+Player.maxHp=Player.hp;
+Player.level=1;
+Player.xp=0;
+Player.xpToNext=100;
+Player.weapons=['pistol'];
+Player.currentWeaponIndex=0;
+Player.ammo={pistol:getMagSize(WEAPONS.pistol)};
+Player.invuln=0;
+Player.fireCooldown=0;
+Player.reloading=false;
+Player.shooting=false;
+Player.speed=char.stats.speed;
+Player.critChance=char.stats.critChance||0;
+Player.skillCooldown=0;
+Player.skillActive=0;
+Player.skillType=null;
+Player.killsThisRun=0;
+for(const k in ActiveBuffs)delete ActiveBuffs[k];
+updateBuffsUI();
+Game.camera.x=-W/2;
+Game.camera.y=-H/2;
+document.getElementById('menu').classList.add('hidden');
+document.getElementById('charSelect').classList.add('hidden');
+document.getElementById('mapSelect').classList.add('hidden');
+document.getElementById('gameOver').classList.add('hidden');
+document.getElementById('pauseMenu').classList.add('hidden');
+document.getElementById('shopMenu').classList.add('hidden');
+document.getElementById('skinShop').classList.add('hidden');
+document.getElementById('adminPanel').classList.add('hidden');
+document.getElementById('ui').classList.remove('hidden');
+document.getElementById('stats').classList.remove('hidden');
+document.getElementById('weaponInfo').classList.remove('hidden');
+document.getElementById('exitBtn').classList.remove('hidden');
+updateHpUI();
+updateWeaponUI();
+document.getElementById('goldDisplay').textContent=(SaveData.gold||0).toLocaleString();
+document.getElementById('killDisplay').textContent='0';
+document.getElementById('waveDisplay').textContent='1';
+document.getElementById('xpFill').style.width='0%';
+document.getElementById('xpText').textContent='Lv 1 - 0/100';
+Game.wave=0;
+startWave();
+Game.lastTime=performance.now();
+requestAnimationFrame(gameLoop);
+}
+function endGame(){
+Game.gameOver=true;
+Game.running=false;
+SaveData.bestWave=Math.max(SaveData.bestWave||1,Game.wave);
+Account.saveProgress(SaveData);
+document.getElementById('finalWave').textContent=Game.wave;
+document.getElementById('finalKills').textContent=Game.kills;
+document.getElementById('finalGold').textContent=(SaveData.gold||0).toLocaleString();
+document.getElementById('saveInfo').textContent=Account.isGuest?'⚠️ Chơi khách - tiến trình không lưu!':'✅ Đã lưu tiến trình!';
+document.getElementById('gameOver').classList.remove('hidden');
+document.getElementById('ui').classList.add('hidden');
+document.getElementById('stats').classList.add('hidden');
+document.getElementById('weaponInfo').classList.add('hidden');
+document.getElementById('exitBtn').classList.add('hidden');
+}
+function restartGame(){
+document.getElementById('gameOver').classList.add('hidden');
+document.getElementById('pauseMenu').classList.add('hidden');
+document.getElementById('shopMenu').classList.add('hidden');
+Game.shopOpen=false;
+startGame();
+}
+function exitToMenu(){
+if(Game.running)SaveData.bestWave=Math.max(SaveData.bestWave||1,Game.wave);
+Account.saveProgress(SaveData);
+Game.running=false;
+Game.paused=false;
+Game.shopOpen=false;
+Game.gameOver=false;
+document.getElementById('gameOver').classList.add('hidden');
+document.getElementById('pauseMenu').classList.add('hidden');
+document.getElementById('shopMenu').classList.add('hidden');
+document.getElementById('skinShop').classList.add('hidden');
+document.getElementById('charSelect').classList.add('hidden');
+document.getElementById('mapSelect').classList.add('hidden');
+document.getElementById('adminPanel').classList.add('hidden');
+document.getElementById('ui').classList.add('hidden');
+document.getElementById('stats').classList.add('hidden');
+document.getElementById('weaponInfo').classList.add('hidden');
+document.getElementById('exitBtn').classList.add('hidden');
+document.getElementById('activeBuffs').innerHTML='';
+document.getElementById('killFeed').innerHTML='';
+document.getElementById('menu').classList.remove('hidden');
+playSound('pickup',0.15);
+showFloatText('💾 Đã lưu tiến trình!','#00ff88');
+updateMenuInfo();
+}
+function togglePause(){
+if(!Game.running||Game.gameOver)return;
+Game.paused=!Game.paused;
+document.getElementById('pauseMenu').classList.toggle('hidden',!Game.paused);
+document.getElementById('pauseSaveInfo').textContent=Account.isGuest?'⚠️ Chơi khách - không lưu':'💾 Tiến trình tự động lưu';
+}
+function showInstructions(){
+const el=document.getElementById('instructions');
+el.style.display=el.style.display==='none'?'block':'none';
+}
+let currentShopTab='weapons';
+function toggleShop(){
+if(!Game.running||Game.gameOver)return;
+Game.shopOpen=!Game.shopOpen;
+Game.paused=Game.shopOpen;
+if(Game.shopOpen){
+document.getElementById('shopMenu').classList.remove('hidden');
+renderShop();
+}else{
+document.getElementById('shopMenu').classList.add('hidden');
+}
+}
+document.querySelectorAll('.shopTab').forEach(tab=>{
+tab.addEventListener('click',()=>{
+document.querySelectorAll('.shopTab').forEach(t=>t.classList.remove('active'));
+tab.classList.add('active');
+currentShopTab=tab.dataset.tab;
+renderShop();
+});
+});
+function renderShop(){
+document.getElementById('shopGold').textContent=(SaveData.gold||0).toLocaleString();
+const grid=document.getElementById('shopGrid');
+grid.innerHTML='';
+const items=SHOP_ITEMS[currentShopTab]||[];
+for(const item of items){
+const div=document.createElement('div');
+div.className='shopItem';
+const owned=item.type==='weapon'&&Player.weapons.includes(item.id);
+const canAfford=(SaveData.gold||0)>=item.price;
+if(owned)div.classList.add('owned');
+if(!canAfford&&!owned)div.classList.add('locked');
+let extra='';
+if(item.type==='buff'&&ActiveBuffs[item.id]){
+extra=`<div style="font-size:11px;color:#00ff88;margin-top:5px;">⏱ ${Math.ceil(ActiveBuffs[item.id].time)}s</div>`;
+}
+div.innerHTML=`<div class="name">${item.name}</div><div class="desc">${item.desc}</div><div class="price">${owned?'✅ ĐÃ CÓ':`💰 ${item.price.toLocaleString()}`}</div>${extra}`;
+div.addEventListener('click',()=>{
+if(owned)return;
+if((SaveData.gold||0)<item.price){
+playSound('hurt',0.05);
+showFloatText('❌ Không đủ vàng!','#ff3355');
+return;
+}
+buyItem(item);
+});
+grid.appendChild(div);
+}
+}
+function buyItem(item){
+if((SaveData.gold||0)<item.price)return;
+if(item.type==='weapon'){
+if(Player.weapons.includes(item.id))return;
+Player.weapons.push(item.id);
+Player.ammo[item.id]=getMagSize(WEAPONS[item.id]);
+showFloatText(`🔫 Mua: ${WEAPONS[item.id].name}`,'#00ff88');
+}else if(item.type==='buff'){
+applyBuff(item.id);
+}else if(item.type==='consumable'){
+if(item.id==='heal_full'){Player.hp=Player.maxHp;updateHpUI();showFloatText('🩹 Full HP!','#ff4466');}
+else if(item.id==='heal_half'){Player.hp=Math.min(Player.hp+Player.maxHp*0.5,Player.maxHp);updateHpUI();showFloatText('💊 +50% HP','#ff4466');}
+else if(item.id==='gold_bag'){SaveData.gold=(SaveData.gold||0)+100;showFloatText('💰 +100 Gold','#ffdd00');}
+else if(item.id==='bomb'){
+for(const e of [...Game.enemies])damageEnemy(e,500);
+Game.screenShake=30;
+showFloatText('💣 BOOM!','#ff6600');
+}
+}else if(item.type==='upgrade'){
+const up=SaveData.permanentUpgrades;
+if(item.id==='up_maxhp'){Player.maxHp+=25;Player.hp+=25;updateHpUI();up.maxHpBonus=(up.maxHpBonus||0)+25;}
+else if(item.id==='up_speed'){up.speedMult=(up.speedMult||1)+0.15;PlayerUpgrades.speedMult=up.speedMult;}
+else if(item.id==='up_damage'){up.damageMult=(up.damageMult||1)+0.20;PlayerUpgrades.damageMult=up.damageMult;}
+else if(item.id==='up_firerate'){up.firerateMult=(up.firerateMult||1)+0.15;PlayerUpgrades.firerateMult=up.firerateMult;}
+else if(item.id==='up_reload'){up.reloadMult=(up.reloadMult||1)*0.8;PlayerUpgrades.reloadMult=up.reloadMult;}
+else if(item.id==='up_mag'){up.magMult=(up.magMult||1)+0.5;PlayerUpgrades.magMult=up.magMult;}
+else if(item.id==='up_pickup'){up.pickupRange=(up.pickupRange||200)+100;PlayerUpgrades.pickupRange=up.pickupRange;}
+else if(item.id==='up_regen'){up.regen=(up.regen||0)+1;PlayerUpgrades.regen=up.regen;}
+else if(item.id==='up_crit'){up.critChance=(up.critChance||0)+0.15;PlayerUpgrades.critChance=up.critChance;Player.critChance=(Player.critChance||0)+0.15;}
+else if(item.id==='up_luck'){up.luck=(up.luck||0)+0.10;PlayerUpgrades.luck=up.luck;}
+showFloatText('✅ Mua nâng cấp!','#00ff88');
+}
+SaveData.gold-=item.price;
+Account.saveProgress(SaveData);
+playSound('pickup',0.1);
+renderShop();
+document.getElementById('goldDisplay').textContent=(SaveData.gold||0).toLocaleString();
+}
+Account.ensureAdmin();
+updateHpUI();
+updateWeaponUI();
+initMobileControls();
+</script>
+</body>
+</html>
